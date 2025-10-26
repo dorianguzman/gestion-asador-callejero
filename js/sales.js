@@ -950,30 +950,30 @@ function showCloseSaleModal(saleId) {
                 <label style="display: block; font-weight: 600; margin-bottom: 0.75rem;">Método(s) de Pago:</label>
 
                 <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">💵 Efectivo:</label>
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">💵 Efectivo:</label>
                     <input type="number" id="payment-efectivo" placeholder="0.00"
-                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
-                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
                 </div>
 
                 <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">🏦 Transferencia:</label>
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">🏦 Transferencia:</label>
                     <input type="number" id="payment-transferencia" placeholder="0.00"
-                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
-                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
                 </div>
 
                 <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">💳 Otro:</label>
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">💳 Otro:</label>
                     <input type="number" id="payment-otro" placeholder="0.00"
-                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
-                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
                 </div>
 
                 <!-- Remaining Amount -->
-                <div id="remaining-payment" style="padding: 0.75rem; border-radius: 8px; background: var(--color-bg); text-align: center;">
-                    <span style="font-weight: 600;">Pendiente: </span>
-                    <span id="remaining-amount" style="font-weight: 700; font-size: 1.125rem; color: var(--color-danger);">$${saleTotal.toFixed(2)}</span>
+                <div id="remaining-payment" style="padding: 1rem; border-radius: 8px; background: var(--color-bg); text-align: center; margin-top: 1rem;">
+                    <span style="font-weight: 600; font-size: 1rem;">Pendiente: </span>
+                    <span id="remaining-amount" style="font-weight: 700; font-size: 1.5rem; color: var(--color-danger);">$${saleTotal.toFixed(2)}</span>
                 </div>
             </div>
 
