@@ -207,7 +207,7 @@ function renderNewSaleForm() {
 
             <!-- Expandable Content -->
             <div id="sale-summary-content" style="padding: 1rem; display: none;">
-                <div id="sale-items-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 0.75rem;">
+                <div id="sale-items-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 0.75rem;">
                     <p style="color: var(--color-text-light); font-size: 0.875rem; text-align: center;">No hay items seleccionados</p>
                 </div>
                 <div style="border-top: 2px solid var(--color-primary); padding-top: 0.75rem; margin-bottom: 0.75rem;">
@@ -482,21 +482,21 @@ function updateSaleSummary() {
     }
 
     itemsList.innerHTML = currentSale.items.map((item, index) => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--color-bg); border-radius: 8px; margin-bottom: 0.5rem;">
-            <div style="flex: 1;">
-                <div style="font-weight: 500;">${item.name}</div>
-                <div style="font-size: 0.875rem; color: var(--color-text-light);">
-                    $${item.price.toFixed(2)} c/u
+        <div style="padding: 0.75rem 0.5rem; background: var(--color-bg); border-radius: 8px; margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; font-size: 0.9rem;">${item.name}</div>
+                    <div style="font-size: 0.75rem; color: var(--color-text-light);">$${item.price.toFixed(2)} c/u</div>
                 </div>
+                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">×</button>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div style="display: flex; align-items: center; background: white; border-radius: 8px; padding: 0.25rem;">
-                    <button onclick="decrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">−</button>
-                    <span style="min-width: 40px; text-align: center; font-weight: bold; font-size: 1rem;">${item.quantity}</span>
-                    <button onclick="incrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; background: white; border-radius: 8px; padding: 0.25rem; gap: 0.25rem;">
+                    <button onclick="decrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 36px; height: 36px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">−</button>
+                    <span style="min-width: 36px; text-align: center; font-weight: bold; font-size: 1.1rem;">${item.quantity}</span>
+                    <button onclick="incrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 36px; height: 36px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">+</button>
                 </div>
-                <span style="font-weight: bold; min-width: 70px; text-align: right;">$${item.subtotal.toFixed(2)}</span>
-                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+                <span style="font-weight: bold; font-size: 1.1rem; color: var(--color-success);">$${item.subtotal.toFixed(2)}</span>
             </div>
         </div>
     `).join('');
