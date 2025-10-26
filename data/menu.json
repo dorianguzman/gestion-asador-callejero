@@ -1,0 +1,240 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2025-10-26",
+  "categories": [
+    {
+      "id": "tacos",
+      "name": "Tacos",
+      "items": [
+        {
+          "id": "taco-arrachera",
+          "name": "Arrachera",
+          "price": 25,
+          "available": true
+        },
+        {
+          "id": "taco-chorizo-espanol",
+          "name": "Chorizo Español",
+          "price": 25,
+          "available": true
+        },
+        {
+          "id": "taco-chorizo-argentino",
+          "name": "Chorizo Argentino",
+          "price": 25,
+          "available": true
+        },
+        {
+          "id": "taco-chistorra",
+          "name": "Chistorra",
+          "price": 25,
+          "available": true
+        },
+        {
+          "id": "taco-diezmillo",
+          "name": "Diezmillo",
+          "price": 30,
+          "available": true
+        },
+        {
+          "id": "taco-aguja",
+          "name": "Aguja",
+          "price": 30,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "quesadillas",
+      "name": "Quesadillas",
+      "priceModifier": 15,
+      "note": "Precio de taco + $15",
+      "items": [
+        {
+          "id": "quesa-arrachera",
+          "name": "Quesadilla Arrachera",
+          "basePrice": 25,
+          "price": 40,
+          "available": true
+        },
+        {
+          "id": "quesa-chorizo-espanol",
+          "name": "Quesadilla Chorizo Español",
+          "basePrice": 25,
+          "price": 40,
+          "available": true
+        },
+        {
+          "id": "quesa-chorizo-argentino",
+          "name": "Quesadilla Chorizo Argentino",
+          "basePrice": 25,
+          "price": 40,
+          "available": true
+        },
+        {
+          "id": "quesa-chistorra",
+          "name": "Quesadilla Chistorra",
+          "basePrice": 25,
+          "price": 40,
+          "available": true
+        },
+        {
+          "id": "quesa-diezmillo",
+          "name": "Quesadilla Diezmillo",
+          "basePrice": 30,
+          "price": 45,
+          "available": true
+        },
+        {
+          "id": "quesa-aguja",
+          "name": "Quesadilla Aguja",
+          "basePrice": 30,
+          "price": 45,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "charolas",
+      "name": "Charolas",
+      "items": [
+        {
+          "id": "charola-arrachera",
+          "name": "Charola Arrachera",
+          "price": 200,
+          "available": true
+        },
+        {
+          "id": "charola-chorizo-espanol",
+          "name": "Charola Chorizo Español",
+          "price": 200,
+          "available": true
+        },
+        {
+          "id": "charola-chorizo-argentino",
+          "name": "Charola Chorizo Argentino",
+          "price": 200,
+          "available": true
+        },
+        {
+          "id": "charola-diezmillo",
+          "name": "Charola Diezmillo",
+          "price": 300,
+          "available": true
+        },
+        {
+          "id": "charola-aguja",
+          "name": "Charola Aguja",
+          "price": 300,
+          "available": true
+        },
+        {
+          "id": "charola-combinada",
+          "name": "Charola Combinada",
+          "price": 250,
+          "priceOptions": [
+            {
+              "name": "Aguja o Diezmillo (una carne)",
+              "price": 250
+            },
+            {
+              "name": "Aguja y Diezmillo (ambas)",
+              "price": 300
+            }
+          ],
+          "available": true,
+          "requiresSelection": true
+        }
+      ]
+    },
+    {
+      "id": "papas",
+      "name": "Papas al Grill",
+      "items": [
+        {
+          "id": "papas-single",
+          "name": "Papas al Grill",
+          "price": 70,
+          "available": true
+        },
+        {
+          "id": "papas-promo",
+          "name": "Papas al Grill 2x",
+          "price": 100,
+          "quantity": 2,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "tortas",
+      "name": "Tortas",
+      "items": [
+        {
+          "id": "torta-single",
+          "name": "Torta",
+          "price": 80,
+          "available": true
+        },
+        {
+          "id": "torta-promo",
+          "name": "Tortas 2x",
+          "price": 150,
+          "quantity": 2,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "chavindecas",
+      "name": "Chavindecas",
+      "items": [
+        {
+          "id": "chavindeca-single",
+          "name": "Chavindeca",
+          "price": 60,
+          "available": true
+        },
+        {
+          "id": "chavindeca-promo",
+          "name": "Chavindecas 2x",
+          "price": 100,
+          "quantity": 2,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "refrescos",
+      "name": "Refrescos",
+      "items": [
+        {
+          "id": "refresco-vidrio",
+          "name": "Refresco Vidrio",
+          "price": 25,
+          "available": true
+        },
+        {
+          "id": "refresco-plastico",
+          "name": "Refresco Plástico",
+          "price": 30,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "delivery",
+      "name": "Servicio a Domicilio",
+      "items": [
+        {
+          "id": "delivery-service",
+          "name": "Servicio a Domicilio",
+          "price": 50,
+          "available": true,
+          "editable": true,
+          "note": "Precio variable según distancia"
+        }
+      ]
+    }
+  ]
+}

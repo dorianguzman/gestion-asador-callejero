@@ -1,0 +1,16 @@
+{
+  "name": "gestion-asador-callejero",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de ventas para Asador Callejero",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build needed - static site'",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
