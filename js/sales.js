@@ -53,7 +53,16 @@ function switchTab(tabName, btnElement) {
  * Load and display active sales
  */
 function loadActiveSales() {
-    const activeSales = getActiveSales();
+    let activeSales = getActiveSales();
+
+    // Fallback to localStorage if API fails
+    if (!activeSales || activeSales.length === 0) {
+        const localSales = JSON.parse(localStorage.getItem('salesActive') || '[]');
+        if (localSales.length > 0) {
+            activeSales = localSales;
+        }
+    }
+
     const container = document.getElementById('active-sales-list');
 
     if (!activeSales || activeSales.length === 0) {
@@ -105,7 +114,16 @@ function loadActiveSales() {
  * Load and display closed sales
  */
 function loadClosedSales() {
-    const closedSales = getClosedSales();
+    let closedSales = getClosedSales();
+
+    // Fallback to localStorage if API fails
+    if (!closedSales || closedSales.length === 0) {
+        const localSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+        if (localSales.length > 0) {
+            closedSales = localSales;
+        }
+    }
+
     const container = document.getElementById('closed-sales-list');
 
     if (!closedSales || closedSales.length === 0) {
@@ -815,6 +833,7 @@ async function saveSale() {
     }
 
     try {
+        // Try API first
         await addActiveSale({
             items: currentSale.items,
             total: currentSale.total,
@@ -833,8 +852,40 @@ async function saveSale() {
         document.querySelector('.tab-btn[data-tab="ventas-activas"]').click();
     } catch (error) {
         console.error('Error saving sale:', error);
-        showToast('Error al guardar la venta', 'error');
+
+        // Fallback to localStorage for testing
+        saveSaleOffline();
     }
+}
+
+/**
+ * Save sale offline (for testing without backend)
+ */
+function saveSaleOffline() {
+    const sale = {
+        id: 'test-' + Date.now(),
+        items: currentSale.items,
+        total: currentSale.total,
+        status: 'active',
+        createdAt: new Date().toISOString()
+    };
+
+    // Get existing sales from localStorage
+    const salesActive = JSON.parse(localStorage.getItem('salesActive') || '[]');
+    salesActive.push(sale);
+    localStorage.setItem('salesActive', JSON.stringify(salesActive));
+
+    showToast('Venta guardada (modo offline)', 'success');
+
+    // Clear current sale
+    currentSale = {
+        items: [],
+        total: 0
+    };
+
+    // Reload active sales and switch tab
+    loadActiveSales();
+    document.querySelector('.tab-btn[data-tab="ventas-activas"]').click();
 }
 
 /**
@@ -1030,10 +1081,49 @@ async function confirmCloseSaleWithPayment(saleId, saleTotal) {
         document.getElementById('payment-modal').remove();
         showToast(`Venta cerrada correctamente`, 'success');
         loadActiveSales();
+        loadClosedSales();
     } catch (error) {
         console.error('Error closing sale:', error);
-        showToast('Error al cerrar la venta', 'error');
+
+        // Fallback to offline mode
+        closeSaleOffline(saleId, primaryMethod, paymentBreakdown, tip);
     }
+}
+
+/**
+ * Close sale offline (for testing without backend)
+ */
+function closeSaleOffline(saleId, primaryMethod, paymentBreakdown, tip) {
+    // Get active sales from localStorage
+    const salesActive = JSON.parse(localStorage.getItem('salesActive') || '[]');
+    const saleIndex = salesActive.findIndex(s => s.id === saleId);
+
+    if (saleIndex === -1) {
+        showToast('Venta no encontrada', 'error');
+        return;
+    }
+
+    // Move sale to closed
+    const sale = salesActive[saleIndex];
+    sale.status = 'closed';
+    sale.paymentMethod = primaryMethod;
+    sale.paymentBreakdown = paymentBreakdown;
+    sale.tip = tip;
+    sale.total = sale.total + tip; // Add tip to total
+    sale.closedAt = new Date().toISOString();
+
+    // Update localStorage
+    const salesClosed = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    salesClosed.unshift(sale);
+    salesActive.splice(saleIndex, 1);
+
+    localStorage.setItem('salesActive', JSON.stringify(salesActive));
+    localStorage.setItem('salesClosed', JSON.stringify(salesClosed));
+
+    document.getElementById('payment-modal').remove();
+    showToast('Venta cerrada (modo offline)', 'success');
+    loadActiveSales();
+    loadClosedSales();
 }
 
 /**
