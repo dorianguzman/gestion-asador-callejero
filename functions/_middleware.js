@@ -4,7 +4,7 @@
  */
 
 const REALM = 'Asador Callejero - Área Restringida';
-const USERNAME = 'admin'; // You can change this
+const USERNAME = 'Linda';
 
 export async function onRequest(context) {
     const { request, env, next } = context;
