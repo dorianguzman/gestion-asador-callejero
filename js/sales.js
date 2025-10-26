@@ -258,18 +258,17 @@ function addItemToSale(itemId, categoryId) {
     const existingItem = currentSale.items.find(i => i.id === itemId);
 
     if (existingItem) {
-        // When adding the same item again, increment by the bundle/unit quantity
-        const incrementBy = item.quantity || 1;
-        existingItem.quantity += incrementBy;
-        existingItem.subtotal += item.price; // Add the price of one more bundle/unit
+        // When adding the same item again, increment quantity by 1
+        existingItem.quantity++;
+        existingItem.subtotal = existingItem.price * existingItem.quantity;
     } else {
-        // First time adding this item
+        // First time adding this item - quantity starts at 1
         currentSale.items.push({
             id: itemId,
             name: item.name,
-            price: item.price,
-            quantity: item.quantity || 1,
-            subtotal: item.price // Price is already the total for the bundle
+            price: item.price, // Price per unit (or per bundle for bundle items)
+            quantity: 1, // Start with 1 item/bundle
+            subtotal: item.price
         });
     }
 
@@ -487,12 +486,17 @@ function updateSaleSummary() {
             <div style="flex: 1;">
                 <div style="font-weight: 500;">${item.name}</div>
                 <div style="font-size: 0.875rem; color: var(--color-text-light);">
-                    ${item.quantity}x $${item.price.toFixed(2)}
+                    $${item.price.toFixed(2)} c/u
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-weight: bold;">$${item.subtotal.toFixed(2)}</span>
-                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 4px; width: 24px; height: 24px; font-size: 0.875rem; cursor: pointer;">×</button>
+                <div style="display: flex; align-items: center; background: white; border-radius: 8px; padding: 0.25rem;">
+                    <button onclick="decrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">−</button>
+                    <span style="min-width: 40px; text-align: center; font-weight: bold; font-size: 1rem;">${item.quantity}</span>
+                    <button onclick="incrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+                </div>
+                <span style="font-weight: bold; min-width: 70px; text-align: right;">$${item.subtotal.toFixed(2)}</span>
+                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 6px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
             </div>
         </div>
     `).join('');
@@ -520,6 +524,31 @@ function updateSaleTotal() {
 function removeItemFromSale(index) {
     currentSale.items.splice(index, 1);
     updateSaleSummary();
+}
+
+/**
+ * Increment item quantity
+ */
+function incrementItem(index) {
+    const item = currentSale.items[index];
+    item.quantity++;
+    item.subtotal = item.price * item.quantity;
+    updateSaleSummary();
+}
+
+/**
+ * Decrement item quantity
+ */
+function decrementItem(index) {
+    const item = currentSale.items[index];
+    if (item.quantity > 1) {
+        item.quantity--;
+        item.subtotal = item.price * item.quantity;
+        updateSaleSummary();
+    } else {
+        // If quantity would be 0, remove the item
+        removeItemFromSale(index);
+    }
 }
 
 /**
