@@ -546,11 +546,6 @@ function updateSaleSummary() {
     // Compact view elements
     const itemsCountBadge = document.getElementById('items-count-badge');
     const totalCompact = document.getElementById('sale-total-compact');
-    const content = document.getElementById('sale-summary-content');
-
-    // Track previous length for auto-expand
-    const previousLength = currentSale._previousLength || 0;
-    currentSale._previousLength = currentSale.items.length;
 
     if (currentSale.items.length === 0) {
         itemsList.innerHTML = '<p style="color: var(--color-text-light); font-size: 0.875rem; text-align: center;">No hay items seleccionados</p>';
@@ -561,13 +556,6 @@ function updateSaleSummary() {
         if (itemsCountBadge) itemsCountBadge.textContent = '0 items';
         if (totalCompact) totalCompact.textContent = '$0.00';
         return;
-    }
-
-    // Auto-expand when first item is added
-    if (previousLength === 0 && currentSale.items.length === 1) {
-        if (content && (content.style.display === 'none' || content.style.display === '')) {
-            toggleSaleSummary();
-        }
     }
 
     // Update compact badge
