@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso - Asador Callejero Catorce</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png">
     <style>
         * {
             margin: 0;
@@ -18,52 +20,126 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background pattern */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 60px,
+                rgba(255, 255, 255, 0.03) 60px,
+                rgba(255, 255, 255, 0.03) 120px
+            );
+            animation: movePattern 20s linear infinite;
+        }
+
+        @keyframes movePattern {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
         }
 
         .login-container {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            padding: 2rem;
+            border-radius: 24px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            padding: 3rem 2.5rem;
             width: 100%;
-            max-width: 400px;
-            animation: slideUp 0.4s ease-out;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle top accent */
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #D84315, #BF360C, #D84315);
+            background-size: 200% 100%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
         .logo {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
-        .logo-icon {
-            font-size: 4rem;
-            margin-bottom: 0.5rem;
+        .logo-img {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            margin-bottom: 1.25rem;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         h1 {
-            font-size: 1.5rem;
-            color: #333;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #D84315, #BF360C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-align: center;
             margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
             text-align: center;
-            color: #666;
-            font-size: 0.875rem;
-            margin-bottom: 2rem;
+            color: #757575;
+            font-size: 0.9375rem;
+            margin-bottom: 2.5rem;
+            font-weight: 500;
         }
 
         .form-group {
@@ -73,68 +149,127 @@
         label {
             display: block;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
+            color: #424242;
+            margin-bottom: 0.625rem;
+            font-size: 0.9375rem;
+            letter-spacing: 0.2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9E9E9E;
+            pointer-events: none;
+            transition: color 0.2s;
         }
 
         input {
             width: 100%;
-            padding: 0.875rem 1rem;
+            padding: 1rem 1rem 1rem 3rem;
             border: 2px solid #E0E0E0;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #FAFAFA;
+        }
+
+        input:hover {
+            border-color: #BDBDBD;
+            background: #FFFFFF;
         }
 
         input:focus {
             outline: none;
             border-color: #D84315;
-            box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.1);
+            box-shadow: 0 0 0 4px rgba(216, 67, 21, 0.08);
+            background: #FFFFFF;
+        }
+
+        input:focus + .input-icon {
+            color: #D84315;
         }
 
         .btn-login {
             width: 100%;
-            padding: 1rem;
+            padding: 1.125rem;
             background: linear-gradient(135deg, #D84315, #BF360C);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.0625rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(216, 67, 21, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(216, 67, 21, 0.3);
+            box-shadow: 0 6px 20px rgba(216, 67, 21, 0.35);
         }
 
         .btn-login:active {
             transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(216, 67, 21, 0.25);
         }
 
         .btn-login:disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
 
         .error-message {
-            background: #FFEBEE;
+            background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
             color: #C62828;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9375rem;
             display: none;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            border-left: 4px solid #C62828;
+            font-weight: 500;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
 
         .error-message.show {
             display: flex;
+        }
+
+        .error-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
         }
 
         .spinner {
@@ -151,52 +286,96 @@
             to { transform: rotate(360deg); }
         }
 
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #F0F0F0;
+            color: #9E9E9E;
+            font-size: 0.8125rem;
+        }
+
+        .security-icon {
+            color: #4CAF50;
+        }
+
         @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+
             .login-container {
-                padding: 1.5rem;
+                padding: 2rem 1.5rem;
+                border-radius: 20px;
             }
 
             h1 {
-                font-size: 1.25rem;
+                font-size: 1.5rem;
             }
 
-            .logo-icon {
-                font-size: 3rem;
+            .logo-img {
+                max-width: 160px;
+            }
+
+            input {
+                padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+            }
+
+            .btn-login {
+                padding: 1rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <div class="logo-icon">🔥</div>
-            <h1>Asador Callejero Catorce</h1>
-            <p class="subtitle">Sistema de Gestión</p>
-        </div>
-
-        <div id="error-message" class="error-message">
-            <span>⚠️</span>
-            <span id="error-text">Contraseña incorrecta</span>
-        </div>
-
-        <form id="login-form">
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Ingresa tu contraseña"
-                    required
-                    autocomplete="current-password"
-                    autofocus
-                >
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="logo">
+                <img src="assets/favicon-logo-square.png" alt="Asador Callejero Catorce" class="logo-img">
+                <h1>Asador Callejero Catorce</h1>
+                <p class="subtitle">Sistema de Gestión</p>
             </div>
 
-            <button type="submit" class="btn-login" id="login-btn">
-                <span id="btn-text">Ingresar</span>
-            </button>
-        </form>
+            <div id="error-message" class="error-message">
+                <span class="error-icon">⚠️</span>
+                <span id="error-text">Contraseña incorrecta</span>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="password">Contraseña de Acceso</label>
+                    <div class="input-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Ingresa tu contraseña"
+                            required
+                            autocomplete="current-password"
+                            autofocus
+                        >
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="login-btn">
+                    <span id="btn-text">Ingresar al Sistema</span>
+                </button>
+            </form>
+
+            <div class="security-badge">
+                <svg class="security-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>Conexión segura encriptada</span>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -240,22 +419,28 @@
 
                 if (response.ok && data.success) {
                     // Login successful
-                    btnText.textContent = '✓ Acceso concedido';
+                    loginBtn.style.background = 'linear-gradient(135deg, #4CAF50, #388E3C)';
+                    btnText.innerHTML = '✓ Acceso Concedido';
+
+                    // Add success animation to container
+                    document.querySelector('.login-container').style.transform = 'scale(0.98)';
+                    document.querySelector('.login-container').style.opacity = '0.7';
+
                     setTimeout(() => {
                         window.location.href = data.redirect || '/';
-                    }, 500);
+                    }, 600);
                 } else {
                     // Login failed
                     showError(data.message || 'Contraseña incorrecta');
                     loginBtn.disabled = false;
-                    btnText.textContent = 'Ingresar';
+                    btnText.textContent = 'Ingresar al Sistema';
                     passwordInput.value = '';
                     passwordInput.focus();
                 }
             } catch (error) {
                 showError('Error de conexión. Por favor intenta de nuevo.');
                 loginBtn.disabled = false;
-                btnText.textContent = 'Ingresar';
+                btnText.textContent = 'Ingresar al Sistema';
             }
         });
 
