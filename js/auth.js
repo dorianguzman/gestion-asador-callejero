@@ -30,7 +30,7 @@ function hideLoginScreen() {
 }
 
 /**
- * Logout function (placeholder - redirects to home)
+ * Logout function - Clear session and redirect to login
  */
 async function logout() {
     const confirmed = await showConfirm(
@@ -44,7 +44,20 @@ async function logout() {
     );
 
     if (confirmed) {
-        window.location.reload();
+        try {
+            // Call logout API to clear session cookie
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
+        // Redirect to login page
+        window.location.href = '/login.html';
     }
 }
 
