@@ -400,14 +400,14 @@ function updateTopProducts(sales) {
         revenue: productRevenue[name]
     })).sort((a, b) => b.quantity - a.quantity);
 
-    // Display top 10
+    // Display top 5
     const container = document.getElementById('top-products');
     if (products.length === 0) {
         container.innerHTML = '<p style="color: var(--color-text-light); text-align: center;">No hay datos para mostrar</p>';
         return;
     }
 
-    const top10 = products.slice(0, 10);
+    const top5 = products.slice(0, 5);
     const medals = ['🥇', '🥈', '🥉'];
 
     container.innerHTML = `
@@ -421,7 +421,7 @@ function updateTopProducts(sales) {
                 </tr>
             </thead>
             <tbody>
-                ${top10.map((product, index) => `
+                ${top5.map((product, index) => `
                     <tr style="border-bottom: 1px solid var(--color-bg);">
                         <td style="padding: 0.5rem; font-size: 1.25rem;">${medals[index] || (index + 1)}</td>
                         <td style="padding: 0.5rem; font-weight: 500;">${product.name}</td>
