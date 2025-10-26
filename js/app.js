@@ -134,7 +134,8 @@ function selectExpenseCategory(category) {
     initializeDateLabels();
 
     // Reset amount
-    clearAmount();
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-amount-value').textContent = '0.00';
 
     // Show form card
     document.getElementById('expense-form-card').style.display = 'block';
