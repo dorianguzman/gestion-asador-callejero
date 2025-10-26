@@ -10,9 +10,10 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Allow login page and API endpoints without authentication
+    // Allow login page, assets, and API endpoints without authentication
     if (pathname === '/login.html' ||
         pathname === '/login' ||
+        pathname.startsWith('/assets/') ||
         pathname.startsWith('/api/login') ||
         pathname.startsWith('/api/logout')) {
         return next();
