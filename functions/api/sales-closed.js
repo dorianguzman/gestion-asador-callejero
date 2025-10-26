@@ -2,15 +2,17 @@
  * Cloudflare Pages Function: Closed Sales API
  * GET /api/sales-closed - Get all closed sales
  * POST /api/sales-closed - Close a sale (move from active to closed)
+ * DELETE /api/sales-closed?id=xxx - Delete a closed sale
  */
 
 export async function onRequest(context) {
     const { request, env } = context;
     const { method } = request;
+    const url = new URL(request.url);
 
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
     };
@@ -76,6 +78,25 @@ export async function onRequest(context) {
                     'DELETE FROM sales_active WHERE id = ?'
                 ).bind(saleId)
             ]);
+
+            return new Response(JSON.stringify({ success: true }), {
+                headers: corsHeaders
+            });
+        }
+
+        // DELETE a closed sale
+        if (method === 'DELETE') {
+            const id = url.searchParams.get('id');
+            if (!id) {
+                return new Response(JSON.stringify({ error: 'ID required' }), {
+                    status: 400,
+                    headers: corsHeaders
+                });
+            }
+
+            await env.DB.prepare(
+                'DELETE FROM sales_closed WHERE id = ?'
+            ).bind(id).run();
 
             return new Response(JSON.stringify({ success: true }), {
                 headers: corsHeaders
