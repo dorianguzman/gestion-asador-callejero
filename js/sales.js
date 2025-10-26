@@ -224,7 +224,7 @@ function renderNewSaleForm() {
                     <!-- Discount line (hidden when no discount) -->
                     <div id="discount-line" style="display: none; padding: 0.5rem 0; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600; font-size: 0.9rem; color: var(--color-success);">🎉 Descuento por promo:</span>
+                            <span style="font-weight: 600; font-size: 0.9rem; color: var(--color-success);">Descuento por promo:</span>
                             <span id="discount-amount" style="font-weight: 700; font-size: 1.1rem; color: var(--color-success);">-$0.00</span>
                         </div>
                     </div>
