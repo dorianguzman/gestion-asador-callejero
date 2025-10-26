@@ -305,8 +305,10 @@
                             <!-- Populated dynamically -->
                         </select>
                     </label>
-                    <button class="primary" onclick="generateReport()">Generar Reporte</button>
-                    <button class="secondary" onclick="exportData()" style="margin-left: 0.5rem;">📊 Exportar CSV</button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="primary" onclick="generateReport()">Generar Reporte</button>
+                        <button class="secondary" onclick="exportData()">Exportar CSV</button>
+                    </div>
                 </div>
             </div>
 
