@@ -221,8 +221,15 @@ function renderNewSaleForm() {
                 </div>
                 <!-- Total Section with Enhanced Visual Hierarchy -->
                 <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.02), transparent); border-top: 3px solid var(--color-primary); padding: 1rem; margin: 0;">
+                    <!-- Subtotal (shown when there's a discount) -->
+                    <div id="subtotal-line" style="display: none; margin-bottom: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500; font-size: 0.9rem; color: var(--color-text-light);">Subtotal:</span>
+                            <span id="sale-subtotal" style="font-weight: 600; font-size: 1rem; color: var(--color-text);">$0.00</span>
+                        </div>
+                    </div>
                     <!-- Discount line (hidden when no discount) -->
-                    <div id="discount-line" style="display: none; padding: 0.5rem 0; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <div id="discount-line" style="display: none; padding-bottom: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-weight: 600; font-size: 0.9rem; color: var(--color-success);">Descuento por promo:</span>
                             <span id="discount-amount" style="font-weight: 700; font-size: 1.1rem; color: var(--color-success);">-$0.00</span>
@@ -609,20 +616,30 @@ function updateSaleTotal() {
         return sum + (item.discount || 0);
     }, 0);
 
+    // Calculate subtotal (before discount)
+    const subtotal = total + totalDiscount;
+
     const totalEl = document.getElementById('sale-total');
     const totalCompact = document.getElementById('sale-total-compact');
+    const subtotalLine = document.getElementById('subtotal-line');
+    const subtotalEl = document.getElementById('sale-subtotal');
     const discountLine = document.getElementById('discount-line');
     const discountAmount = document.getElementById('discount-amount');
 
     if (totalEl) totalEl.textContent = `$${total.toFixed(2)} MXN`;
     if (totalCompact) totalCompact.textContent = `$${total.toFixed(2)}`;
 
-    // Show/hide discount line
-    if (discountLine && discountAmount) {
+    // Show/hide discount and subtotal lines
+    if (discountLine && discountAmount && subtotalLine && subtotalEl) {
         if (totalDiscount > 0) {
+            // Show subtotal, discount, and total
+            subtotalLine.style.display = 'block';
+            subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
             discountLine.style.display = 'block';
             discountAmount.textContent = `-$${totalDiscount.toFixed(2)}`;
         } else {
+            // Hide subtotal and discount lines
+            subtotalLine.style.display = 'none';
             discountLine.style.display = 'none';
         }
     }
