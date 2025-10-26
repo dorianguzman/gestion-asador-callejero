@@ -258,7 +258,7 @@ function addItemToSale(itemId, categoryId) {
 
     // Check if item requires custom amount (like Delivery)
     if (item.requiresCustomAmount) {
-        showCustomAmountModal(item);
+        showCustomAmountModal(item, categoryId);
         return;
     }
 
@@ -279,6 +279,7 @@ function addItemToSale(itemId, categoryId) {
         // First time adding this item - quantity starts at 1
         currentSale.items.push({
             id: itemId,
+            categoryId: categoryId, // Store category for bundle lookup
             name: item.name,
             price: item.price, // Price per unit (or per bundle for bundle items)
             quantity: 1, // Start with 1 item/bundle
@@ -292,7 +293,7 @@ function addItemToSale(itemId, categoryId) {
 /**
  * Show custom amount modal for items like delivery
  */
-function showCustomAmountModal(item) {
+function showCustomAmountModal(item, categoryId) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
@@ -331,7 +332,7 @@ function showCustomAmountModal(item) {
     const cancelBtn = document.getElementById('custom-amount-cancel');
 
     const handleConfirm = () => {
-        confirmCustomAmount(item.id, item.name);
+        confirmCustomAmount(item.id, item.name, categoryId);
     };
 
     const handleCancel = () => {
@@ -363,7 +364,7 @@ function showCustomAmountModal(item) {
 /**
  * Confirm custom amount and add to sale
  */
-async function confirmCustomAmount(itemId, itemName) {
+async function confirmCustomAmount(itemId, itemName, categoryId) {
     const input = document.getElementById('custom-amount-input');
     const amount = parseFloat(input.value);
 
@@ -383,6 +384,7 @@ async function confirmCustomAmount(itemId, itemName) {
     // Add to sale
     currentSale.items.push({
         id: itemId + '-' + Date.now(), // Unique ID for each delivery entry
+        categoryId: categoryId,
         name: itemName,
         price: amount,
         quantity: 1,
@@ -441,6 +443,7 @@ function addItemWithPrice(itemId, categoryId, optionName, price) {
 
     currentSale.items.push({
         id: `${itemId}-${Date.now()}`,
+        categoryId: categoryId,
         name: `${item.name} (${optionName})`,
         price: price,
         quantity: 1,
@@ -610,20 +613,92 @@ function removeItemFromSale(index) {
 }
 
 /**
- * Increment item quantity
+ * Find bundle item for a given item and quantity
+ */
+function findBundleItem(categoryId, baseItemName, targetQuantity) {
+    const menu = getMenu();
+    const category = menu.categories.find(c => c.id === categoryId);
+    if (!category) return null;
+
+    // Look for a bundle item (e.g., "Tortas 2x" for "Torta")
+    const bundleItem = category.items.find(item => {
+        // Check if this is a bundle item for the target quantity
+        return item.quantity === targetQuantity &&
+               item.name.includes('2x') &&
+               item.available;
+    });
+
+    return bundleItem;
+}
+
+/**
+ * Increment item quantity with bundle pricing detection
  */
 function incrementItem(index) {
     const item = currentSale.items[index];
-    item.quantity++;
+    const newQuantity = item.quantity + 1;
+
+    // Check if incrementing to 2 and a bundle exists
+    if (newQuantity === 2 && item.categoryId) {
+        const bundleItem = findBundleItem(item.categoryId, item.name, 2);
+
+        if (bundleItem && bundleItem.price < item.price * 2) {
+            // Bundle is cheaper - switch to bundle pricing
+            item.id = bundleItem.id;
+            item.name = bundleItem.name;
+            item.price = bundleItem.price / 2; // Store unit price for display
+            item.quantity = 2;
+            item.subtotal = bundleItem.price;
+            item.isBundle = true; // Mark as using bundle pricing
+
+            showToast(`Descuento aplicado: ${bundleItem.name}`, 'success');
+            updateSaleSummary();
+            return;
+        }
+    }
+
+    // Regular increment
+    item.quantity = newQuantity;
     item.subtotal = item.price * item.quantity;
     updateSaleSummary();
 }
 
 /**
- * Decrement item quantity
+ * Decrement item quantity with bundle pricing handling
  */
 function decrementItem(index) {
     const item = currentSale.items[index];
+
+    // If decrementing from 2 to 1 and using bundle pricing
+    if (item.quantity === 2 && item.isBundle && item.categoryId) {
+        // Find the single item version
+        const menu = getMenu();
+        const category = menu.categories.find(c => c.id === item.categoryId);
+
+        if (category) {
+            // Look for the single item (not a bundle, not requiring selection)
+            const singleItem = category.items.find(i => {
+                return !i.quantity && // Not a bundle
+                       !i.requiresSelection && // Not a selection item
+                       i.available &&
+                       !i.name.includes('2x'); // Not the 2x version
+            });
+
+            if (singleItem) {
+                // Switch to single item pricing
+                item.id = singleItem.id;
+                item.name = singleItem.name;
+                item.price = singleItem.price;
+                item.quantity = 1;
+                item.subtotal = singleItem.price;
+                item.isBundle = false;
+
+                updateSaleSummary();
+                return;
+            }
+        }
+    }
+
     if (item.quantity > 1) {
         item.quantity--;
         item.subtotal = item.price * item.quantity;
