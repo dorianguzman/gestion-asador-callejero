@@ -973,6 +973,31 @@ button {
     background: #D0D0D0;
 }
 
+/* ===== EXPENSE AMOUNT CLICKABLE ===== */
+.expense-amount-clickable:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+}
+
+.expense-amount-clickable:active {
+    transform: translateY(0);
+}
+
+#amount-hint {
+    animation: pulseHint 2s ease-in-out infinite;
+}
+
+@keyframes pulseHint {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
 /* ===== AUTHENTICATION OVERLAY ===== */
 #auth-overlay {
     position: fixed;

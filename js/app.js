@@ -137,6 +137,10 @@ function selectExpenseCategory(category) {
     document.getElementById('expense-amount').value = '';
     document.getElementById('expense-amount-value').textContent = '0.00';
 
+    // Show hint badge
+    const hint = document.getElementById('amount-hint');
+    if (hint) hint.style.display = 'block';
+
     // Show form card
     document.getElementById('expense-form-card').style.display = 'block';
 
@@ -276,6 +280,10 @@ function showExpenseAmountModal() {
         // Update the expense amount
         document.getElementById('expense-amount').value = amount.toFixed(2);
         document.getElementById('expense-amount-value').textContent = amount.toFixed(2);
+
+        // Hide the hint badge once amount is entered
+        const hint = document.getElementById('amount-hint');
+        if (hint) hint.style.display = 'none';
 
         // Close modal
         modal.classList.remove('active');
@@ -487,6 +495,10 @@ function clearExpenseForm() {
     // Reset amount
     document.getElementById('expense-amount').value = '';
     document.getElementById('expense-amount-value').textContent = '0.00';
+
+    // Show hint badge again
+    const hint = document.getElementById('amount-hint');
+    if (hint) hint.style.display = 'block';
 }
 
 /**
