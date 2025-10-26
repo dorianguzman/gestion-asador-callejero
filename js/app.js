@@ -12,6 +12,22 @@ function isTestMode() {
 }
 
 /**
+ * Update database status banner
+ */
+function updateDatabaseStatus(isAvailable) {
+    const databaseBanner = document.getElementById('database-banner');
+    if (!databaseBanner) return;
+
+    if (!isAvailable) {
+        // Database not available - show banner
+        databaseBanner.style.display = 'flex';
+    } else {
+        // Database available - hide banner
+        databaseBanner.style.display = 'none';
+    }
+}
+
+/**
  * Initialize connection monitoring
  */
 function initializeConnectionMonitor() {

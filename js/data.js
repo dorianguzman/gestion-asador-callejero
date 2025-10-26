@@ -13,6 +13,7 @@ let dataCache = {
 };
 
 let isDataLoaded = false;
+let isDatabaseAvailable = false;
 
 /**
  * Initialize data from D1
@@ -36,8 +37,27 @@ async function initializeData() {
                 fetch('/api/sales-closed').then(r => r.ok ? r.json() : []),
                 fetch('/api/expenses').then(r => r.ok ? r.json() : [])
             ]);
+
+            // Check if database is available (at least menu loaded from API)
+            isDatabaseAvailable = menu !== null;
+
+            if (!isDatabaseAvailable) {
+                console.log('⚠️ Database not available - need to configure D1');
+                if (typeof updateDatabaseStatus === 'function') {
+                    updateDatabaseStatus(false);
+                }
+            } else {
+                console.log('✅ Database connected');
+                if (typeof updateDatabaseStatus === 'function') {
+                    updateDatabaseStatus(true);
+                }
+            }
         } catch (apiError) {
             console.log('⚠️ API not available (running locally?), using local data');
+            isDatabaseAvailable = false;
+            if (typeof updateDatabaseStatus === 'function') {
+                updateDatabaseStatus(false);
+            }
             menu = null;
             salesActive = [];
             salesClosed = [];
@@ -149,6 +169,10 @@ async function addActiveSale(sale) {
             })
         });
 
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+
         const savedSale = await response.json();
 
         // Update cache
@@ -159,6 +183,9 @@ async function addActiveSale(sale) {
     } catch (error) {
         console.error('Error adding sale:', error);
         updateSyncStatus('idle');
+        if (typeof showToast === 'function') {
+            showToast('Error al guardar venta - Verifica conexión a base de datos', 'error');
+        }
         throw error;
     }
 }
@@ -288,6 +315,10 @@ async function addExpense(expense) {
             body: JSON.stringify(expense)
         });
 
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+
         const savedExpense = await response.json();
 
         // Update cache
@@ -298,6 +329,9 @@ async function addExpense(expense) {
     } catch (error) {
         console.error('Error adding expense:', error);
         updateSyncStatus('idle');
+        if (typeof showToast === 'function') {
+            showToast('Error al guardar gasto - Verifica conexión a base de datos', 'error');
+        }
         throw error;
     }
 }

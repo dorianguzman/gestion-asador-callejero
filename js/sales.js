@@ -74,7 +74,7 @@ function loadActiveSales() {
         <div class="card" style="margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <h4>Venta #${sale.id.slice(-6)}</h4>
+                    <h4>Venta #${sale.id ? sale.id.slice(-6) : 'N/A'}</h4>
                     <p style="color: var(--color-text-light); font-size: 0.875rem; margin: 0.5rem 0;">
                         ${new Date(sale.createdAt).toLocaleString('es-MX')}
                     </p>
@@ -173,7 +173,7 @@ function loadClosedSales() {
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                        <h4>Venta #${sale.id.slice(-6)}</h4>
+                        <h4>Venta #${sale.id ? sale.id.slice(-6) : 'N/A'}</h4>
                         ${paymentMethodBadges}
                         ${hasTip ? `<span style="background: var(--color-accent); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Con propina</span>` : ''}
                     </div>
