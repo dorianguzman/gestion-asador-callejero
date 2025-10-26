@@ -6,10 +6,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "asador-callejero-db"
-database_id = "to-be-set-after-creation"
-
-# Pages configuration
-pages_build_output_dir = "."
+database_id = "7745e6fd-7901-41e2-84b4-ec8618fc6d1d"
 
 [env.production]
 # Production environment settings
