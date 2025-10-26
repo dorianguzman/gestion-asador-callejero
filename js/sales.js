@@ -221,6 +221,13 @@ function renderNewSaleForm() {
                 </div>
                 <!-- Total Section with Enhanced Visual Hierarchy -->
                 <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.02), transparent); border-top: 3px solid var(--color-primary); padding: 1rem; margin: 0;">
+                    <!-- Discount line (hidden when no discount) -->
+                    <div id="discount-line" style="display: none; padding: 0.5rem 0; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; font-size: 0.9rem; color: var(--color-success);">🎉 Descuento por promo:</span>
+                            <span id="discount-amount" style="font-weight: 700; font-size: 1.1rem; color: var(--color-success);">-$0.00</span>
+                        </div>
+                    </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <span style="font-weight: 600; font-size: 1rem; color: var(--color-text-light);">Total:</span>
                         <span id="sale-total" style="font-weight: 700; font-size: 1.5rem; color: var(--color-primary);">$0.00 MXN</span>
@@ -597,11 +604,28 @@ function updateSaleTotal() {
     const total = currentSale.items.reduce((sum, item) => sum + item.subtotal, 0);
     currentSale.total = total;
 
+    // Calculate total discount from bundle items
+    const totalDiscount = currentSale.items.reduce((sum, item) => {
+        return sum + (item.discount || 0);
+    }, 0);
+
     const totalEl = document.getElementById('sale-total');
     const totalCompact = document.getElementById('sale-total-compact');
+    const discountLine = document.getElementById('discount-line');
+    const discountAmount = document.getElementById('discount-amount');
 
     if (totalEl) totalEl.textContent = `$${total.toFixed(2)} MXN`;
     if (totalCompact) totalCompact.textContent = `$${total.toFixed(2)}`;
+
+    // Show/hide discount line
+    if (discountLine && discountAmount) {
+        if (totalDiscount > 0) {
+            discountLine.style.display = 'block';
+            discountAmount.textContent = `-$${totalDiscount.toFixed(2)}`;
+        } else {
+            discountLine.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -644,12 +668,16 @@ function incrementItem(index) {
 
         if (bundleItem && bundleItem.price < item.price * 2) {
             // Bundle is cheaper - switch to bundle pricing
+            const regularPrice = item.price * 2;
+            const discount = regularPrice - bundleItem.price;
+
             item.id = bundleItem.id;
             item.name = bundleItem.name;
             item.price = bundleItem.price / 2; // Store unit price for display
             item.quantity = 2;
             item.subtotal = bundleItem.price;
             item.isBundle = true; // Mark as using bundle pricing
+            item.discount = discount; // Store discount amount
 
             showToast(`Descuento aplicado: ${bundleItem.name}`, 'success');
             updateSaleSummary();
@@ -692,6 +720,7 @@ function decrementItem(index) {
                 item.quantity = 1;
                 item.subtotal = singleItem.price;
                 item.isBundle = false;
+                item.discount = 0; // Remove discount
 
                 updateSaleSummary();
                 return;
