@@ -31,8 +31,12 @@ export async function onRequest(context) {
     const cookies = parseCookies(request.headers.get('Cookie') || '');
     const sessionToken = cookies[COOKIE_NAME];
 
-    // If no session cookie, redirect to login
+    // If no session cookie, redirect to login (but not if already there)
     if (!sessionToken) {
+        // Prevent redirect loop - if we're somehow still trying to access login, allow it
+        if (pathname.includes('login')) {
+            return next();
+        }
         return redirectToLogin();
     }
 
