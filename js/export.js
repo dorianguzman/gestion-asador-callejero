@@ -16,8 +16,13 @@ function exportData() {
     }
 
     // Get data
-    const closedSales = getClosedSales();
+    let closedSales = getClosedSales();
     const expenses = getExpenses();
+
+    // Fallback to localStorage if API fails
+    if (!closedSales || closedSales.length === 0) {
+        closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    }
 
     // Filter by period
     const filteredSales = filterByPeriod(closedSales, month, year);
@@ -42,14 +47,18 @@ function exportToCsv(sales, expenses, filename) {
     csv += '=== REPORTE ASADOR CALLEJERO ===\n';
     csv += `Fecha de generación: ${new Date().toLocaleString('es-MX')}\n\n`;
 
-    // Sales summary
+    // Sales summary with tips separated
     const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+    const totalTips = sales.reduce((sum, s) => sum + (s.tip || 0), 0);
+    const revenueWithoutTips = totalRevenue - totalTips;
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const netProfit = totalRevenue - totalExpenses;
 
     csv += '=== RESUMEN EJECUTIVO ===\n';
     csv += 'Concepto,Monto\n';
-    csv += `Ingresos Totales,$${totalRevenue.toFixed(2)}\n`;
+    csv += `Ingresos Totales,$${revenueWithoutTips.toFixed(2)}\n`;
+    csv += `Propinas,$${totalTips.toFixed(2)}\n`;
+    csv += `Total con Propinas,$${totalRevenue.toFixed(2)}\n`;
     csv += `Gastos Totales,$${totalExpenses.toFixed(2)}\n`;
     csv += `Ganancia Neta,$${netProfit.toFixed(2)}\n\n`;
 
@@ -66,7 +75,7 @@ function exportToCsv(sales, expenses, filename) {
 
     // Detailed sales
     csv += '=== DETALLE DE VENTAS ===\n';
-    csv += 'Fecha,Hora,Método de Pago,Items,Total\n';
+    csv += 'Fecha,Hora,Método de Pago,Breakdown de Pago,Items,Subtotal,Propina,Total\n';
     sales.forEach(sale => {
         const date = new Date(sale.closedAt);
         const dateStr = date.toLocaleDateString('es-MX');
@@ -74,7 +83,20 @@ function exportToCsv(sales, expenses, filename) {
         const itemsStr = sale.items ? sale.items.map(i => `${i.name} x${i.quantity}`).join('; ') : 'N/A';
         const paymentMethod = sale.paymentMethod || 'N/A';
 
-        csv += `${dateStr},${timeStr},${paymentMethod},"${itemsStr}",$${sale.total.toFixed(2)}\n`;
+        // Payment breakdown
+        let paymentBreakdownStr = 'N/A';
+        if (sale.paymentBreakdown) {
+            const breakdown = Object.entries(sale.paymentBreakdown)
+                .filter(([_, amount]) => amount > 0)
+                .map(([method, amount]) => `${method}: $${amount.toFixed(2)}`)
+                .join(' + ');
+            if (breakdown) paymentBreakdownStr = breakdown;
+        }
+
+        const tip = sale.tip || 0;
+        const subtotal = sale.total - tip;
+
+        csv += `${dateStr},${timeStr},${paymentMethod},"${paymentBreakdownStr}","${itemsStr}",$${subtotal.toFixed(2)},$${tip.toFixed(2)},$${sale.total.toFixed(2)}\n`;
     });
 
     csv += '\n';

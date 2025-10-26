@@ -52,20 +52,28 @@ function generateReport() {
         return;
     }
 
-    const closedSales = getClosedSales();
+    let closedSales = getClosedSales();
     const expenses = getExpenses();
+
+    // Fallback to localStorage if API fails
+    if (!closedSales || closedSales.length === 0) {
+        closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    }
 
     // Filter by period
     const filteredSales = filterByPeriod(closedSales, month, year);
     const filteredExpenses = filterByPeriod(expenses, month, year);
 
-    // Calculate totals
+    // Calculate totals with tips separated
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+    const totalTips = filteredSales.reduce((sum, sale) => sum + (sale.tip || 0), 0);
+    const revenueWithoutTips = totalRevenue - totalTips;
     const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const netProfit = totalRevenue - totalExpenses;
 
     // Update KPIs
-    document.getElementById('kpi-revenue').textContent = `$${totalRevenue.toFixed(2)} MXN`;
+    document.getElementById('kpi-revenue').textContent = `$${revenueWithoutTips.toFixed(2)} MXN`;
+    document.getElementById('kpi-tips').textContent = `$${totalTips.toFixed(2)} MXN`;
     document.getElementById('kpi-expenses').textContent = `$${totalExpenses.toFixed(2)} MXN`;
 
     const profitEl = document.getElementById('kpi-profit');
