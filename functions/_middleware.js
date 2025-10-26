@@ -4,14 +4,17 @@
  */
 
 const COOKIE_NAME = 'asador_session';
-const PUBLIC_PATHS = ['/login.html', '/api/login', '/api/logout'];
 
 export async function onRequest(context) {
     const { request, env, next } = context;
     const url = new URL(request.url);
+    const pathname = url.pathname;
 
-    // Allow public paths without authentication
-    if (PUBLIC_PATHS.includes(url.pathname)) {
+    // Allow login page and API endpoints without authentication
+    if (pathname === '/login.html' ||
+        pathname === '/login' ||
+        pathname.startsWith('/api/login') ||
+        pathname.startsWith('/api/logout')) {
         return next();
     }
 
