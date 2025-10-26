@@ -190,39 +190,50 @@ function renderNewSaleForm() {
             }).join('')}
         </div>
 
-        <div id="current-sale-summary" style="position: sticky; bottom: 0; background: var(--color-white); margin: -1rem; margin-top: 1rem; box-shadow: 0 -4px 8px rgba(0,0,0,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+        <!-- Backdrop Overlay -->
+        <div id="sale-backdrop" onclick="toggleSaleSummary()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 998; transition: opacity 0.3s ease; opacity: 0;"></div>
+
+        <div id="current-sale-summary" style="position: sticky; bottom: 0; background: var(--color-white); margin: -1rem; margin-top: 1rem; box-shadow: 0 -8px 24px rgba(0,0,0,0.15); border-radius: var(--radius-lg) var(--radius-lg) 0 0; z-index: 999; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
             <!-- Compact Header (always visible) -->
-            <div onclick="toggleSaleSummary()" style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="font-weight: 600; font-size: 0.875rem;">Venta Actual</span>
-                    <span id="items-count-badge" style="background: rgba(255,255,255,0.3); padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">0 items</span>
+            <div onclick="toggleSaleSummary()" style="padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; cursor: pointer; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); color: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0; user-select: none; -webkit-tap-highlight-color: transparent;">
+                <!-- Drag Handle -->
+                <div style="display: flex; justify-content: center; margin-bottom: 0.125rem;">
+                    <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.4); border-radius: 2px;"></div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <span id="sale-total-compact" style="font-weight: bold; font-size: 1rem;">$0.00</span>
-                    <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s ease;">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.625rem;">
+                        <span style="font-weight: 700; font-size: 1rem;">Venta Actual</span>
+                        <span id="items-count-badge" style="background: rgba(255,255,255,0.3); padding: 0.25rem 0.625rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">0 items</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.875rem;">
+                        <span id="sale-total-compact" style="font-weight: 700; font-size: 1.125rem;">$0.00</span>
+                        <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </div>
                 </div>
             </div>
 
             <!-- Expandable Content -->
-            <div id="sale-summary-content" style="padding: 1rem; display: none;">
-                <div id="sale-items-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 0.75rem;">
+            <div id="sale-summary-content" style="padding: 0; display: none; opacity: 0; transition: opacity 0.3s ease;">
+                <div id="sale-items-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 0; padding: 1rem; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch;">
                     <p style="color: var(--color-text-light); font-size: 0.875rem; text-align: center;">No hay items seleccionados</p>
                 </div>
-                <div style="border-top: 2px solid var(--color-primary); padding-top: 0.75rem; margin-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.125rem;">
-                        <span>Total:</span>
-                        <span id="sale-total">$0.00 MXN</span>
+                <!-- Total Section with Enhanced Visual Hierarchy -->
+                <div style="background: linear-gradient(to bottom, rgba(0,0,0,0.02), transparent); border-top: 3px solid var(--color-primary); padding: 1rem; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; font-size: 1rem; color: var(--color-text-light);">Total:</span>
+                        <span id="sale-total" style="font-weight: 700; font-size: 1.5rem; color: var(--color-primary);">$0.00 MXN</span>
                     </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="primary" onclick="saveSale()" style="flex: 1;">
-                        Guardar Venta
-                    </button>
-                    <button class="secondary" onclick="clearCurrentSale()">
-                        Limpiar
-                    </button>
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 0.625rem;">
+                        <button class="primary" onclick="saveSale()" style="flex: 1; font-size: 1rem; font-weight: 600; padding: 0.875rem; box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3); transition: all 0.2s ease;">
+                            Guardar Venta
+                        </button>
+                        <button class="secondary" onclick="clearCurrentSale()" style="font-weight: 600; padding: 0.875rem 1.25rem; transition: all 0.2s ease;">
+                            Limpiar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -230,6 +241,9 @@ function renderNewSaleForm() {
 
     document.getElementById('sale-form').innerHTML = formHtml;
     updateSaleSummary();
+
+    // Initialize swipe gesture after rendering
+    setTimeout(() => initSaleSwipeGesture(), 100);
 }
 
 /**
@@ -437,19 +451,88 @@ function addItemWithPrice(itemId, categoryId, optionName, price) {
 }
 
 /**
- * Toggle sale summary expanded/collapsed
+ * Toggle sale summary expanded/collapsed with smooth animations
  */
 function toggleSaleSummary() {
     const content = document.getElementById('sale-summary-content');
     const icon = document.getElementById('toggle-icon');
+    const backdrop = document.getElementById('sale-backdrop');
 
-    if (content.style.display === 'none') {
+    if (content.style.display === 'none' || content.style.display === '') {
+        // Expand
+        backdrop.style.display = 'block';
         content.style.display = 'block';
-        icon.style.transform = 'rotate(180deg)';
+
+        // Trigger animations after display change
+        requestAnimationFrame(() => {
+            backdrop.style.opacity = '1';
+            content.style.opacity = '1';
+            icon.style.transform = 'rotate(180deg)';
+        });
     } else {
-        content.style.display = 'none';
+        // Collapse
+        backdrop.style.opacity = '0';
+        content.style.opacity = '0';
         icon.style.transform = 'rotate(0deg)';
+
+        // Hide after animation completes
+        setTimeout(() => {
+            backdrop.style.display = 'none';
+            content.style.display = 'none';
+        }, 300);
     }
+}
+
+/**
+ * Initialize swipe gesture for sale summary
+ */
+function initSaleSwipeGesture() {
+    const summary = document.getElementById('current-sale-summary');
+    if (!summary) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    summary.addEventListener('touchstart', (e) => {
+        // Only allow swipe from the header
+        if (!e.target.closest('#current-sale-summary > div:first-child')) return;
+
+        const content = document.getElementById('sale-summary-content');
+        if (content.style.display !== 'block') return; // Only when expanded
+
+        startY = e.touches[0].clientY;
+        isDragging = true;
+    }, { passive: true });
+
+    summary.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        // Only allow downward swipe
+        if (diff > 0 && diff < 200) {
+            summary.style.transform = `translateY(${diff}px)`;
+        }
+    }, { passive: true });
+
+    summary.addEventListener('touchend', () => {
+        if (!isDragging) return;
+
+        isDragging = false;
+        const diff = currentY - startY;
+
+        // If swiped down more than 80px, close it
+        if (diff > 80) {
+            toggleSaleSummary();
+        }
+
+        // Reset transform
+        summary.style.transform = '';
+        startY = 0;
+        currentY = 0;
+    });
 }
 
 /**
@@ -463,6 +546,11 @@ function updateSaleSummary() {
     // Compact view elements
     const itemsCountBadge = document.getElementById('items-count-badge');
     const totalCompact = document.getElementById('sale-total-compact');
+    const content = document.getElementById('sale-summary-content');
+
+    // Track previous length for auto-expand
+    const previousLength = currentSale._previousLength || 0;
+    currentSale._previousLength = currentSale.items.length;
 
     if (currentSale.items.length === 0) {
         itemsList.innerHTML = '<p style="color: var(--color-text-light); font-size: 0.875rem; text-align: center;">No hay items seleccionados</p>';
@@ -475,6 +563,13 @@ function updateSaleSummary() {
         return;
     }
 
+    // Auto-expand when first item is added
+    if (previousLength === 0 && currentSale.items.length === 1) {
+        if (content && (content.style.display === 'none' || content.style.display === '')) {
+            toggleSaleSummary();
+        }
+    }
+
     // Update compact badge
     if (itemsCountBadge) {
         const totalItems = currentSale.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -482,21 +577,21 @@ function updateSaleSummary() {
     }
 
     itemsList.innerHTML = currentSale.items.map((item, index) => `
-        <div style="padding: 0.75rem 0.5rem; background: var(--color-bg); border-radius: 8px; margin-bottom: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+        <div style="padding: 0.75rem 0.625rem; background: white; border-radius: 10px; margin-bottom: 0.625rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.06); transition: all 0.2s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.625rem;">
                 <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 600; font-size: 0.9rem;">${item.name}</div>
-                    <div style="font-size: 0.75rem; color: var(--color-text-light);">$${item.price.toFixed(2)} c/u</div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--color-text);">${item.name}</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-light); margin-top: 0.125rem;">$${item.price.toFixed(2)} c/u</div>
                 </div>
-                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 6px; width: 28px; height: 28px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">×</button>
+                <button onclick="removeItemFromSale(${index})" style="background: var(--color-danger); color: white; border: none; border-radius: 6px; width: 30px; height: 30px; font-size: 1.125rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(216, 67, 21, 0.3);" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">×</button>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; background: white; border-radius: 8px; padding: 0.25rem; gap: 0.25rem;">
-                    <button onclick="decrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 36px; height: 36px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">−</button>
-                    <span style="min-width: 36px; text-align: center; font-weight: bold; font-size: 1.1rem;">${item.quantity}</span>
-                    <button onclick="incrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 6px; width: 36px; height: 36px; font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">+</button>
+                <div style="display: flex; align-items: center; background: var(--color-bg); border-radius: 10px; padding: 0.25rem; gap: 0.375rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <button onclick="decrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 1.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46, 125, 50, 0.3);" onmousedown="this.style.transform='scale(0.92)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.92)'" ontouchend="this.style.transform='scale(1)'">−</button>
+                    <span style="min-width: 40px; text-align: center; font-weight: 700; font-size: 1.15rem; color: var(--color-primary);">${item.quantity}</span>
+                    <button onclick="incrementItem(${index})" style="background: var(--color-primary); color: white; border: none; border-radius: 8px; width: 38px; height: 38px; font-size: 1.375rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46, 125, 50, 0.3);" onmousedown="this.style.transform='scale(0.92)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.92)'" ontouchend="this.style.transform='scale(1)'">+</button>
                 </div>
-                <span style="font-weight: bold; font-size: 1.1rem; color: var(--color-success);">$${item.subtotal.toFixed(2)}</span>
+                <span style="font-weight: 700; font-size: 1.25rem; color: var(--color-success);">$${item.subtotal.toFixed(2)}</span>
             </div>
         </div>
     `).join('');

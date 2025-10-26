@@ -1117,6 +1117,24 @@ button {
     }
 }
 
+/* ===== TABLET OPTIMIZATIONS ===== */
+@media (min-width: 641px) and (max-width: 1024px) {
+    /* Venta Actual - larger on tablets */
+    #sale-items-list {
+        max-height: 60vh !important;
+    }
+
+    /* Larger font sizes for better readability */
+    .kpi-value {
+        font-size: 2.25rem;
+    }
+
+    /* Better use of space on tablets */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* ===== TOUCH OPTIMIZATIONS ===== */
 @media (hover: none) and (pointer: coarse) {
     /* Larger tap targets for touch devices */
