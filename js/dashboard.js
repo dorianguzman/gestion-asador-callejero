@@ -53,11 +53,16 @@ function generateReport() {
     }
 
     let closedSales = getClosedSales();
-    const expenses = getExpenses();
+    let expenses = getExpenses();
 
-    // Fallback to localStorage if API fails
-    if (!closedSales || closedSales.length === 0) {
-        closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode()) {
+        if (!closedSales || closedSales.length === 0) {
+            closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+        }
+        if (!expenses || expenses.length === 0) {
+            expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+        }
     }
 
     // Filter by period
@@ -110,8 +115,18 @@ function filterByPeriod(data, month, year) {
  * Update revenue vs expenses chart
  */
 function updateRevenueExpensesChart(month, year) {
-    const closedSales = getClosedSales();
-    const expenses = getExpenses();
+    let closedSales = getClosedSales();
+    let expenses = getExpenses();
+
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode()) {
+        if (!closedSales || closedSales.length === 0) {
+            closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+        }
+        if (!expenses || expenses.length === 0) {
+            expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+        }
+    }
 
     let labels, revenueData, expenseData;
 
@@ -287,9 +302,28 @@ function updateExpenseBreakdownChart(filteredExpenses) {
  * Update payment method breakdown
  */
 function updatePaymentBreakdown(sales) {
-    const cash = sales.filter(s => s.paymentMethod === 'Efectivo').reduce((sum, s) => sum + s.total, 0);
-    const transfer = sales.filter(s => s.paymentMethod === 'Transferencia').reduce((sum, s) => sum + s.total, 0);
-    const other = sales.filter(s => s.paymentMethod === 'Otro').reduce((sum, s) => sum + s.total, 0);
+    let cash = 0;
+    let transfer = 0;
+    let other = 0;
+
+    sales.forEach(sale => {
+        // Check if sale has payment breakdown (split payment)
+        if (sale.paymentBreakdown && Object.values(sale.paymentBreakdown).some(v => v > 0)) {
+            // Use breakdown amounts
+            cash += sale.paymentBreakdown.Efectivo || 0;
+            transfer += sale.paymentBreakdown.Transferencia || 0;
+            other += sale.paymentBreakdown.Otro || 0;
+        } else {
+            // Legacy: use primary payment method
+            if (sale.paymentMethod === 'Efectivo') {
+                cash += sale.total;
+            } else if (sale.paymentMethod === 'Transferencia') {
+                transfer += sale.total;
+            } else if (sale.paymentMethod === 'Otro') {
+                other += sale.total;
+            }
+        }
+    });
 
     document.getElementById('payment-cash').textContent = `$${cash.toFixed(2)}`;
     document.getElementById('payment-transfer').textContent = `$${transfer.toFixed(2)}`;
@@ -306,13 +340,31 @@ function updateAverageSales(sales, month, year) {
 
     // Calculate days in period
     let daysInPeriod;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
     if (month) {
-        daysInPeriod = new Date(year, month, 0).getDate();
+        const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+        // If this is the current month and year, only count days up to today
+        if (parseInt(year) === currentYear && parseInt(month) === currentMonth) {
+            daysInPeriod = now.getDate();
+        } else {
+            daysInPeriod = totalDaysInMonth;
+        }
     } else {
         // Full year
-        const start = new Date(year, 0, 1);
-        const end = new Date(year, 11, 31);
-        daysInPeriod = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        if (parseInt(year) === currentYear) {
+            // Current year - count days from Jan 1 to today
+            const start = new Date(year, 0, 1);
+            daysInPeriod = Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1;
+        } else {
+            // Past/future year - full 365/366 days
+            const start = new Date(year, 0, 1);
+            const end = new Date(year, 11, 31);
+            daysInPeriod = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        }
     }
 
     const avgDaily = daysInPeriod > 0 ? totalRevenue / daysInPeriod : 0;

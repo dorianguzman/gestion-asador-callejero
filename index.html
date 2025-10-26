@@ -30,6 +30,11 @@
                 <p class="subtitle">Sistema de Gestión</p>
             </div>
 
+            <!-- Test Mode Badge -->
+            <div id="test-mode-badge" style="display: none; background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 0.375rem 0.75rem; border-radius: 6px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3); margin-right: 1rem;">
+                MODO DE PRUEBA
+            </div>
+
             <!-- Status Indicators -->
             <div class="status-indicators">
                 <div class="status-item online-status" id="online-status">
@@ -54,6 +59,16 @@
             </button>
         </div>
     </header>
+
+    <!-- Connection Status Banner (shown when offline in production) -->
+    <div id="connection-banner" style="display: none; background: linear-gradient(135deg, #D32F2F, #C62828); color: white; padding: 0.875rem 1rem; text-align: center; font-weight: 600; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); align-items: center; justify-content: center; gap: 0.5rem; position: sticky; top: 0; z-index: 999;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>Sin conexión a internet - Funcionalidad limitada</span>
+    </div>
 
     <!-- Main Content -->
     <main class="container">

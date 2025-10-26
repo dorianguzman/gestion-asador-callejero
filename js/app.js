@@ -4,12 +4,97 @@
  */
 
 /**
+ * Check if running in test mode (localhost)
+ */
+function isTestMode() {
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+}
+
+/**
+ * Initialize connection monitoring
+ */
+function initializeConnectionMonitor() {
+    // Show test mode badge if on localhost
+    const testModeBadge = document.getElementById('test-mode-badge');
+    if (testModeBadge && isTestMode()) {
+        testModeBadge.style.display = 'block';
+    }
+
+    const updateConnectionStatus = () => {
+        const isOnline = navigator.onLine;
+        const isTest = isTestMode();
+        const banner = document.getElementById('connection-banner');
+
+        if (!isOnline && !isTest) {
+            // Production mode + offline: Show banner and disable functionality
+            if (banner) {
+                banner.style.display = 'flex';
+            }
+            disableAllForms();
+        } else {
+            // Online or test mode: Hide banner and enable functionality
+            if (banner) {
+                banner.style.display = 'none';
+            }
+            enableAllForms();
+        }
+    };
+
+    // Set up event listeners
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+
+    // Initial check
+    updateConnectionStatus();
+}
+
+/**
+ * Disable all forms and buttons when offline in production
+ */
+function disableAllForms() {
+    // Disable all buttons except navigation
+    document.querySelectorAll('button:not(.menu-card button):not(.tab-btn)').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    });
+
+    // Disable all inputs
+    document.querySelectorAll('input, textarea, select').forEach(input => {
+        input.disabled = true;
+        input.style.opacity = '0.5';
+    });
+}
+
+/**
+ * Enable all forms and buttons when online
+ */
+function enableAllForms() {
+    // Enable all buttons
+    document.querySelectorAll('button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+    });
+
+    // Enable all inputs
+    document.querySelectorAll('input, textarea, select').forEach(input => {
+        input.disabled = false;
+        input.style.opacity = '';
+    });
+}
+
+/**
  * Initialize the application
  */
 async function initializeApp() {
     console.log('🚀 Initializing Asador Callejero app...');
 
     try {
+        // Initialize connection monitoring
+        initializeConnectionMonitor();
+
         // Load data from GitHub
         await initializeData();
 
@@ -138,10 +223,13 @@ function selectExpenseCategory(category) {
     document.getElementById('expense-amount-value').textContent = '0.00';
 
     // Show form card
-    document.getElementById('expense-form-card').style.display = 'block';
+    const formCard = document.getElementById('expense-form-card');
+    formCard.style.display = 'block';
 
-    // Scroll to form
-    document.getElementById('expense-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scroll to form - works better on mobile with a slight delay
+    setTimeout(() => {
+        formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 }
 
 /**
@@ -322,7 +410,16 @@ function cancelExpenseForm() {
  * Load and display expenses
  */
 function loadExpenses() {
-    const expenses = getExpenses();
+    let expenses = getExpenses();
+
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!expenses || expenses.length === 0)) {
+        const localExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+        if (localExpenses.length > 0) {
+            expenses = localExpenses;
+        }
+    }
+
     const container = document.getElementById('expenses-list');
 
     if (!expenses || expenses.length === 0) {
@@ -356,30 +453,30 @@ function loadExpenses() {
     container.innerHTML = sortedExpenses.map(expense => {
         const icon = categoryIcons[expense.category] || '📦';
         return `
-            <div class="expense-item-card" id="expense-${expense.id}">
-                <div style="margin-right: 0.75rem; font-size: 1.5rem;">
+            <div style="background: white; border-radius: 6px; padding: 0.5rem 0.625rem; margin-bottom: 0.375rem; box-shadow: 0 1px 2px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 1rem;">
                     ${icon}
                 </div>
-                <div class="expense-item-info">
-                    <div class="expense-item-category">${categoryNames[expense.category] || expense.category}</div>
-                    <div class="expense-item-description">${expense.description}</div>
-                    <div class="expense-item-date">${new Date(expense.date || expense.createdAt).toLocaleDateString('es-MX', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: var(--color-text); margin-bottom: 0.0625rem;">${categoryNames[expense.category] || expense.category}</div>
+                    <div style="font-size: 0.8rem; color: var(--color-text); margin-bottom: 0.0625rem;">${expense.description}</div>
+                    <div style="font-size: 0.7rem; color: var(--color-text-light);">${new Date(expense.date || expense.createdAt).toLocaleDateString('es-MX', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.25rem;">
-                    <div class="expense-item-amount">-$${expense.amount.toFixed(2)}</div>
-                    <button class="expense-item-delete" onclick="editExpense('${expense.id}')" title="Editar gasto" style="background: #E3F2FD; color: #1976D2;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                    <button class="expense-item-delete" onclick="deleteExpenseConfirm('${expense.id}')" title="Eliminar gasto">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
+                <div style="font-weight: 700; font-size: 0.9rem; color: var(--color-danger); white-space: nowrap; margin-right: 0.25rem;">
+                    -$${expense.amount.toFixed(2)}
                 </div>
+                <button class="expense-item-delete" onclick="editExpense('${expense.id}')" title="Editar gasto" style="background: #E8F5E9; color: #2E7D32;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="expense-item-delete" onclick="deleteExpenseConfirm('${expense.id}')" title="Eliminar gasto">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
         `;
     }).join('');
@@ -457,7 +554,53 @@ async function handleExpenseSubmit(event) {
         loadExpenses();
     } catch (error) {
         console.error('Error saving expense:', error);
-        showToast('Error al guardar el gasto', 'error');
+
+        // Fallback to localStorage for offline mode (test mode only)
+        if (isTestMode()) {
+            const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+
+            if (editingId) {
+                // Update existing expense in localStorage
+                const expenseIndex = expenses.findIndex(e => e.id === editingId);
+                if (expenseIndex !== -1) {
+                    expenses[expenseIndex] = {
+                        ...expenses[expenseIndex],
+                        date: date,
+                        description: description,
+                        amount: amount,
+                        category: category
+                    };
+                    localStorage.setItem('expenses', JSON.stringify(expenses));
+                    showToast('Gasto actualizado (modo offline)', 'success');
+                    delete form.dataset.editingId;
+                } else {
+                    showToast('Error al actualizar el gasto', 'error');
+                    return;
+                }
+            } else {
+                // Add new expense to localStorage
+                const newExpense = {
+                    id: 'exp-' + Date.now(),
+                    date: date,
+                    description: description,
+                    amount: amount,
+                    category: category,
+                    createdAt: new Date().toISOString()
+                };
+                expenses.unshift(newExpense);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                showToast('Gasto registrado (modo offline)', 'success');
+            }
+
+            // Clear and hide form
+            clearExpenseForm();
+            document.getElementById('expense-form-card').style.display = 'none';
+
+            // Reload expenses list
+            loadExpenses();
+        } else {
+            showToast('Error al guardar - Verifica tu conexión', 'error');
+        }
     }
 }
 
@@ -493,7 +636,13 @@ function clearExpenseForm() {
  * Edit expense
  */
 function editExpense(expenseId) {
-    const expenses = getExpenses();
+    let expenses = getExpenses();
+
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!expenses || expenses.length === 0)) {
+        expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+    }
+
     const expense = expenses.find(e => e.id === expenseId);
 
     if (!expense) {
@@ -553,7 +702,23 @@ async function deleteExpenseConfirm(expenseId) {
         loadExpenses();
     } catch (error) {
         console.error('Error deleting expense:', error);
-        showToast('Error al eliminar el gasto', 'error');
+
+        // Fallback to localStorage for offline mode (test mode only)
+        if (isTestMode()) {
+            const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+            const expenseIndex = expenses.findIndex(e => e.id === expenseId);
+
+            if (expenseIndex !== -1) {
+                expenses.splice(expenseIndex, 1);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                showToast('Gasto eliminado (modo offline)', 'success');
+                loadExpenses();
+            } else {
+                showToast('Error al eliminar el gasto', 'error');
+            }
+        } else {
+            showToast('Error al eliminar - Verifica tu conexión', 'error');
+        }
     }
 }
 

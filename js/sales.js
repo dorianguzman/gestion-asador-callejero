@@ -55,8 +55,8 @@ function switchTab(tabName, btnElement) {
 function loadActiveSales() {
     let activeSales = getActiveSales();
 
-    // Fallback to localStorage if API fails
-    if (!activeSales || activeSales.length === 0) {
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!activeSales || activeSales.length === 0)) {
         const localSales = JSON.parse(localStorage.getItem('salesActive') || '[]');
         if (localSales.length > 0) {
             activeSales = localSales;
@@ -102,8 +102,17 @@ function loadActiveSales() {
                 <button class="primary" onclick="showCloseSaleModal('${sale.id}')" style="flex: 1;">
                     Cerrar Venta
                 </button>
-                <button class="danger" onclick="deleteActiveSaleConfirm('${sale.id}')">
-                    Eliminar
+                <button class="expense-item-delete" onclick="editActiveSale('${sale.id}')" title="Editar venta" style="background: #E8F5E9; color: #2E7D32; padding: 0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="expense-item-delete" onclick="deleteActiveSaleConfirm('${sale.id}')" title="Eliminar venta" style="padding: 0.75rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -116,8 +125,8 @@ function loadActiveSales() {
 function loadClosedSales() {
     let closedSales = getClosedSales();
 
-    // Fallback to localStorage if API fails
-    if (!closedSales || closedSales.length === 0) {
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!closedSales || closedSales.length === 0)) {
         const localSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
         if (localSales.length > 0) {
             closedSales = localSales;
@@ -141,15 +150,31 @@ function loadClosedSales() {
         const hasPaymentBreakdown = sale.paymentBreakdown && Object.values(sale.paymentBreakdown).some(v => v > 0);
         const saleSubtotal = hasTip ? sale.total - sale.tip : sale.total;
 
+        // Get all payment methods used (if there's a breakdown with multiple methods)
+        let paymentMethodBadges = '';
+        if (hasPaymentBreakdown) {
+            const methodsUsed = Object.entries(sale.paymentBreakdown).filter(([_, amount]) => amount > 0);
+            if (methodsUsed.length > 1) {
+                // Multiple payment methods - show all
+                paymentMethodBadges = methodsUsed.map(([method, _]) =>
+                    `<span style="background: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${method}</span>`
+                ).join('');
+            } else {
+                // Single payment method
+                paymentMethodBadges = `<span style="background: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${sale.paymentMethod || 'Pagado'}</span>`;
+            }
+        } else {
+            // No breakdown - show primary method
+            paymentMethodBadges = `<span style="background: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">${sale.paymentMethod || 'Pagado'}</span>`;
+        }
+
         return `
         <div class="card" style="margin-bottom: 1rem; opacity: 0.9;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                         <h4>Venta #${sale.id.slice(-6)}</h4>
-                        <span style="background: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
-                            ${sale.paymentMethod || 'Pagado'}
-                        </span>
+                        ${paymentMethodBadges}
                         ${hasTip ? `<span style="background: var(--color-accent); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Con propina</span>` : ''}
                     </div>
                     <p style="color: var(--color-text-light); font-size: 0.875rem; margin: 0.5rem 0;">
@@ -159,10 +184,21 @@ function loadClosedSales() {
                         ${sale.items.length} item${sale.items.length > 1 ? 's' : ''}
                     </div>
                     ${hasPaymentBreakdown ? `
-                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-text-light);">
-                        ${Object.entries(sale.paymentBreakdown).filter(([_, amount]) => amount > 0).map(([method, amount]) =>
-                            `${method}: $${amount.toFixed(2)}`
-                        ).join(' + ')}
+                    <div style="margin-top: 0.75rem;">
+                        <button onclick="togglePaymentBreakdown('${sale.id}')" style="background: var(--color-bg); border: none; padding: 0.5rem 0.75rem; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: var(--color-primary);">Ver Desglose de Pago</span>
+                            <svg id="breakdown-icon-${sale.id}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s ease;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div id="breakdown-${sale.id}" style="display: none; margin-top: 0.5rem; background: var(--color-bg); padding: 0.75rem; border-radius: 8px; overflow: hidden; transition: all 0.3s ease;">
+                            ${Object.entries(sale.paymentBreakdown).filter(([_, amount]) => amount > 0).map(([method, amount]) =>
+                                `<div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 500;">${method}:</span>
+                                    <span style="font-weight: 600;">$${amount.toFixed(2)}</span>
+                                </div>`
+                            ).join('')}
+                        </div>
                     </div>
                     ` : ''}
                     ${hasTip ? `
@@ -175,6 +211,22 @@ function loadClosedSales() {
                     ` : ''}
                     <div style="margin-top: 0.5rem; font-weight: bold; font-size: 1.125rem; color: var(--color-primary);">
                         Total: $${sale.total.toFixed(2)} MXN
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-bg); justify-content: flex-end;">
+                        <button class="expense-item-delete" onclick="editClosedSale('${sale.id}')" title="Editar venta" style="background: #E8F5E9; color: #2E7D32;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="expense-item-delete" onclick="deleteClosedSaleConfirm('${sale.id}')" title="Eliminar venta">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -323,12 +375,11 @@ function addItemToSale(itemId, categoryId) {
     }
 
     // Check if item already exists in sale
-    const existingItem = currentSale.items.find(i => i.id === itemId);
+    const existingItemIndex = currentSale.items.findIndex(i => i.id === itemId);
 
-    if (existingItem) {
-        // When adding the same item again, increment quantity by 1
-        existingItem.quantity++;
-        existingItem.subtotal = existingItem.price * existingItem.quantity;
+    if (existingItemIndex !== -1) {
+        // When adding the same item again, use incrementItem to handle bundle pricing
+        incrementItem(existingItemIndex);
     } else {
         // First time adding this item - quantity starts at 1
         currentSale.items.push({
@@ -339,9 +390,8 @@ function addItemToSale(itemId, categoryId) {
             quantity: 1, // Start with 1 item/bundle
             subtotal: item.price
         });
+        updateSaleSummary();
     }
-
-    updateSaleSummary();
 }
 
 /**
@@ -713,7 +763,7 @@ function findBundleItem(categoryId, baseItemName, targetQuantity) {
 }
 
 /**
- * Increment item quantity with bundle pricing detection
+ * Increment item quantity with bundle pricing detection (pairs only)
  */
 function incrementItem(index) {
     const item = currentSale.items[index];
@@ -728,6 +778,8 @@ function incrementItem(index) {
             const regularPrice = item.price * 2;
             const discount = regularPrice - bundleItem.price;
 
+            item.originalSinglePrice = item.price; // Store original single price
+            item.bundlePriceForTwo = bundleItem.price; // Store bundle price
             item.id = bundleItem.id;
             item.name = bundleItem.name;
             item.price = bundleItem.price / 2; // Store unit price for display
@@ -742,7 +794,32 @@ function incrementItem(index) {
         }
     }
 
-    // Regular increment
+    // If already using bundle pricing and quantity >= 2
+    if (item.isBundle && item.originalSinglePrice && item.bundlePriceForTwo) {
+        const oldQuantity = item.quantity;
+        item.quantity = newQuantity;
+
+        // Promo only applies to pairs (even quantities)
+        const pairs = Math.floor(newQuantity / 2);
+        const singles = newQuantity % 2;
+
+        // Calculate: (pairs × bundle_price) + (singles × original_price)
+        item.subtotal = (pairs * item.bundlePriceForTwo) + (singles * item.originalSinglePrice);
+
+        // Calculate discount
+        const regularTotal = newQuantity * item.originalSinglePrice;
+        item.discount = regularTotal - item.subtotal;
+
+        // Show toast when completing a new pair (going from odd to even)
+        if (oldQuantity % 2 === 1 && newQuantity % 2 === 0) {
+            showToast(`Descuento aplicado: ${item.name}`, 'success');
+        }
+
+        updateSaleSummary();
+        return;
+    }
+
+    // Regular increment (no bundle pricing available)
     item.quantity = newQuantity;
     item.subtotal = item.price * item.quantity;
     updateSaleSummary();
@@ -778,6 +855,9 @@ function decrementItem(index) {
                 item.subtotal = singleItem.price;
                 item.isBundle = false;
                 item.discount = 0; // Remove discount
+                // Clear bundle pricing data
+                delete item.originalSinglePrice;
+                delete item.bundlePriceForTwo;
 
                 updateSaleSummary();
                 return;
@@ -787,7 +867,23 @@ function decrementItem(index) {
 
     if (item.quantity > 1) {
         item.quantity--;
-        item.subtotal = item.price * item.quantity;
+
+        // If using bundle pricing, recalculate with pair logic
+        if (item.isBundle && item.originalSinglePrice && item.bundlePriceForTwo) {
+            const pairs = Math.floor(item.quantity / 2);
+            const singles = item.quantity % 2;
+
+            // Calculate: (pairs × bundle_price) + (singles × original_price)
+            item.subtotal = (pairs * item.bundlePriceForTwo) + (singles * item.originalSinglePrice);
+
+            // Calculate discount
+            const regularTotal = item.quantity * item.originalSinglePrice;
+            item.discount = regularTotal - item.subtotal;
+        } else {
+            // Regular pricing
+            item.subtotal = item.price * item.quantity;
+        }
+
         updateSaleSummary();
     } else {
         // If quantity would be 0, remove the item
@@ -853,8 +949,12 @@ async function saveSale() {
     } catch (error) {
         console.error('Error saving sale:', error);
 
-        // Fallback to localStorage for testing
-        saveSaleOffline();
+        // Fallback to localStorage for testing (test mode only)
+        if (isTestMode()) {
+            saveSaleOffline();
+        } else {
+            showToast('Error al guardar - Verifica tu conexión', 'error');
+        }
     }
 }
 
@@ -894,8 +994,8 @@ function saveSaleOffline() {
 function showCloseSaleModal(saleId) {
     let sales = getActiveSales();
 
-    // Fallback to localStorage if API fails
-    if (!sales || sales.length === 0) {
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!sales || sales.length === 0)) {
         sales = JSON.parse(localStorage.getItem('salesActive') || '[]');
     }
 
@@ -926,15 +1026,19 @@ function showCloseSaleModal(saleId) {
 
             <!-- Tip Section -->
             <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Propina:</label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Propina (opcional):</label>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 0)" style="padding: 0.625rem;">0%</button>
                     <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 10)" style="padding: 0.625rem;">10%</button>
                     <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 15)" style="padding: 0.625rem;">15%</button>
                     <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 20)" style="padding: 0.625rem;">20%</button>
                 </div>
-                <input type="number" id="tip-custom" placeholder="Propina personalizada"
-                    style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
-                    oninput="updatePaymentTotal(${saleTotal})" step="0.01" min="0">
+                <button class="secondary" onclick="showCustomTipModal(${saleTotal})" style="width: 100%; margin-top: 0.5rem;">
+                    Propina Personalizada
+                </button>
+                <div id="tip-display" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: var(--color-success); color: white; border-radius: 8px; text-align: center; font-weight: 600;">
+                    Propina: $0.00
+                </div>
             </div>
 
             <!-- Total with Tip -->
@@ -945,36 +1049,31 @@ function showCloseSaleModal(saleId) {
                 </div>
             </div>
 
-            <!-- Payment Methods -->
+            <!-- Payment Method Buttons -->
             <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 600; margin-bottom: 0.75rem;">Método(s) de Pago:</label>
+                <label style="display: block; font-weight: 600; margin-bottom: 0.75rem;">Agregar Pago:</label>
+                <button class="primary" onclick="showPaymentMethodModal('${saleId}', ${saleTotal}, 'Efectivo')" style="width: 100%; margin-bottom: 0.5rem; font-size: 1rem; padding: 0.875rem;">
+                    Efectivo
+                </button>
+                <button class="primary" onclick="showPaymentMethodModal('${saleId}', ${saleTotal}, 'Transferencia')" style="width: 100%; margin-bottom: 0.5rem; font-size: 1rem; padding: 0.875rem;">
+                    Transferencia
+                </button>
+                <button class="primary" onclick="showPaymentMethodModal('${saleId}', ${saleTotal}, 'Otro')" style="width: 100%; margin-bottom: 0.5rem; font-size: 1rem; padding: 0.875rem;">
+                    Otro
+                </button>
+            </div>
 
-                <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">💵 Efectivo:</label>
-                    <input type="number" id="payment-efectivo" placeholder="0.00"
-                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
-                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
+            <!-- Payment Summary -->
+            <div id="payment-summary" style="margin-bottom: 1rem; display: none;">
+                <h4 style="margin-bottom: 0.5rem;">Pagos Recibidos:</h4>
+                <div id="payment-list" style="background: var(--color-bg); padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.875rem;">
                 </div>
+            </div>
 
-                <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">🏦 Transferencia:</label>
-                    <input type="number" id="payment-transferencia" placeholder="0.00"
-                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
-                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
-                </div>
-
-                <div style="margin-bottom: 0.75rem;">
-                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">💳 Otro:</label>
-                    <input type="number" id="payment-otro" placeholder="0.00"
-                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
-                        oninput="updateRemaining(${saleTotal})" step="10" min="0">
-                </div>
-
-                <!-- Remaining Amount -->
-                <div id="remaining-payment" style="padding: 1rem; border-radius: 8px; background: var(--color-bg); text-align: center; margin-top: 1rem;">
-                    <span style="font-weight: 600; font-size: 1rem;">Pendiente: </span>
-                    <span id="remaining-amount" style="font-weight: 700; font-size: 1.5rem; color: var(--color-danger);">$${saleTotal.toFixed(2)}</span>
-                </div>
+            <!-- Remaining Amount -->
+            <div id="remaining-payment" style="padding: 1rem; border-radius: 8px; background: var(--color-bg); text-align: center; margin-bottom: 1rem;">
+                <span style="font-weight: 600; font-size: 1rem;">Pendiente: </span>
+                <span id="remaining-amount" style="font-weight: 700; font-size: 1.5rem; color: var(--color-danger);">$${saleTotal.toFixed(2)}</span>
             </div>
 
             <!-- Action Buttons -->
@@ -990,6 +1089,150 @@ function showCloseSaleModal(saleId) {
     `;
 
     document.body.appendChild(modal);
+
+    // Initialize payment tracking
+    window.currentPayments = {
+        Efectivo: 0,
+        Transferencia: 0,
+        Otro: 0
+    };
+    window.currentTip = 0;
+}
+
+/**
+ * Show payment method modal (popup style)
+ */
+function showPaymentMethodModal(saleId, saleTotal, methodName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">${methodName}</h3>
+                <p class="modal-message">Ingresa el monto recibido</p>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; text-align: left;">Monto (MXN):</label>
+                    <input type="number" id="payment-method-input"
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        placeholder="0.00" step="10" min="0" autofocus>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="payment-cancel">
+                        Cancelar
+                    </button>
+                    <button class="modal-btn modal-btn-confirm" id="payment-confirm">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Trigger animation
+    setTimeout(() => modal.classList.add('active'), 10);
+
+    const input = document.getElementById('payment-method-input');
+    const confirmBtn = document.getElementById('payment-confirm');
+    const cancelBtn = document.getElementById('payment-cancel');
+
+    const handleConfirm = () => {
+        const amount = parseFloat(input.value) || 0;
+        if (amount > 0) {
+            window.currentPayments[methodName] = amount;
+            updatePaymentSummary(saleTotal);
+            modal.classList.remove('active');
+            setTimeout(() => document.body.removeChild(modal), 300);
+        }
+    };
+
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        setTimeout(() => document.body.removeChild(modal), 300);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) handleCancel();
+    });
+
+    // Focus and Enter key support
+    setTimeout(() => {
+        input.focus();
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleConfirm();
+        });
+    }, 100);
+}
+
+/**
+ * Show custom tip modal (popup style)
+ */
+function showCustomTipModal(saleTotal) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3 class="modal-title">Propina Personalizada</h3>
+                <p class="modal-message">Ingresa el monto de la propina</p>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; text-align: left;">Monto (MXN):</label>
+                    <input type="number" id="tip-custom-input"
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        placeholder="0.00" step="10" min="0" autofocus>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="tip-cancel">
+                        Cancelar
+                    </button>
+                    <button class="modal-btn modal-btn-confirm" id="tip-confirm">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('active'), 10);
+
+    const input = document.getElementById('tip-custom-input');
+    const confirmBtn = document.getElementById('tip-confirm');
+    const cancelBtn = document.getElementById('tip-cancel');
+
+    const handleConfirm = () => {
+        const amount = parseFloat(input.value) || 0;
+        window.currentTip = amount;
+        updateTipDisplay(saleTotal);
+        updatePaymentSummary(saleTotal);
+        modal.classList.remove('active');
+        setTimeout(() => document.body.removeChild(modal), 300);
+    };
+
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        setTimeout(() => document.body.removeChild(modal), 300);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) handleCancel();
+    });
+
+    setTimeout(() => {
+        input.focus();
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleConfirm();
+        });
+    }, 100);
 }
 
 /**
@@ -997,8 +1240,10 @@ function showCloseSaleModal(saleId) {
  */
 function setTipPercentage(saleTotal, percentage) {
     const tipAmount = saleTotal * (percentage / 100);
-    document.getElementById('tip-custom').value = tipAmount.toFixed(2);
-    updatePaymentTotal(saleTotal);
+    window.currentTip = tipAmount;
+
+    updateTipDisplay(saleTotal);
+    updatePaymentSummary(saleTotal);
 
     // Highlight selected button
     document.querySelectorAll('.tip-btn').forEach(btn => {
@@ -1010,38 +1255,57 @@ function setTipPercentage(saleTotal, percentage) {
 }
 
 /**
- * Update total with tip
+ * Update tip display
  */
-function updatePaymentTotal(saleTotal) {
-    const tipInput = document.getElementById('tip-custom');
-    const tip = parseFloat(tipInput.value) || 0;
-    const totalWithTip = saleTotal + tip;
+function updateTipDisplay(saleTotal) {
+    const tipDisplay = document.getElementById('tip-display');
+    const totalWithTip = document.getElementById('total-with-tip');
+    const tip = window.currentTip || 0;
 
-    document.getElementById('total-with-tip').textContent = `$${totalWithTip.toFixed(2)}`;
+    if (tip > 0) {
+        tipDisplay.style.display = 'block';
+        tipDisplay.textContent = `Propina: $${tip.toFixed(2)}`;
+    } else {
+        tipDisplay.style.display = 'none';
+    }
 
-    // Update remaining amount
-    updateRemaining(saleTotal);
+    const total = saleTotal + tip;
+    totalWithTip.textContent = `$${total.toFixed(2)}`;
 }
 
 /**
- * Update remaining payment amount
+ * Update payment summary and validation
  */
-function updateRemaining(saleTotal) {
-    const tipInput = document.getElementById('tip-custom');
-    const tip = parseFloat(tipInput.value) || 0;
+function updatePaymentSummary(saleTotal) {
+    const payments = window.currentPayments || { Efectivo: 0, Transferencia: 0, Otro: 0 };
+    const tip = window.currentTip || 0;
     const totalToPay = saleTotal + tip;
 
-    const efectivo = parseFloat(document.getElementById('payment-efectivo').value) || 0;
-    const transferencia = parseFloat(document.getElementById('payment-transferencia').value) || 0;
-    const otro = parseFloat(document.getElementById('payment-otro').value) || 0;
-
-    const totalPaid = efectivo + transferencia + otro;
+    // Calculate total paid
+    const totalPaid = payments.Efectivo + payments.Transferencia + payments.Otro;
     const remaining = totalToPay - totalPaid;
 
+    // Update payment list
+    const paymentSummary = document.getElementById('payment-summary');
+    const paymentList = document.getElementById('payment-list');
+    const paymentsReceived = Object.entries(payments).filter(([_, amount]) => amount > 0);
+
+    if (paymentsReceived.length > 0) {
+        paymentSummary.style.display = 'block';
+        paymentList.innerHTML = paymentsReceived
+            .map(([method, amount]) => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                    <span>${method}:</span>
+                    <strong>$${amount.toFixed(2)}</strong>
+                </div>
+            `).join('');
+    } else {
+        paymentSummary.style.display = 'none';
+    }
+
+    // Update remaining amount
     const remainingEl = document.getElementById('remaining-amount');
     const confirmBtn = document.getElementById('confirm-payment-btn');
-
-    remainingEl.textContent = `$${Math.abs(remaining).toFixed(2)}`;
 
     if (remaining < -0.01) {
         // Overpayment
@@ -1051,6 +1315,7 @@ function updateRemaining(saleTotal) {
     } else if (remaining > 0.01) {
         // Underpayment
         remainingEl.style.color = 'var(--color-danger)';
+        remainingEl.textContent = `$${remaining.toFixed(2)}`;
         confirmBtn.disabled = true;
     } else {
         // Exact payment
@@ -1064,25 +1329,23 @@ function updateRemaining(saleTotal) {
  * Confirm close sale with payment breakdown and tip
  */
 async function confirmCloseSaleWithPayment(saleId, saleTotal) {
-    const tip = parseFloat(document.getElementById('tip-custom').value) || 0;
-    const efectivo = parseFloat(document.getElementById('payment-efectivo').value) || 0;
-    const transferencia = parseFloat(document.getElementById('payment-transferencia').value) || 0;
-    const otro = parseFloat(document.getElementById('payment-otro').value) || 0;
+    const tip = window.currentTip || 0;
+    const payments = window.currentPayments || { Efectivo: 0, Transferencia: 0, Otro: 0 };
 
     const paymentBreakdown = {
-        Efectivo: efectivo,
-        Transferencia: transferencia,
-        Otro: otro
+        Efectivo: payments.Efectivo,
+        Transferencia: payments.Transferencia,
+        Otro: payments.Otro
     };
 
     // Determine primary payment method (largest amount)
     let primaryMethod = 'Efectivo';
-    let maxAmount = efectivo;
-    if (transferencia > maxAmount) {
+    let maxAmount = payments.Efectivo;
+    if (payments.Transferencia > maxAmount) {
         primaryMethod = 'Transferencia';
-        maxAmount = transferencia;
+        maxAmount = payments.Transferencia;
     }
-    if (otro > maxAmount) {
+    if (payments.Otro > maxAmount) {
         primaryMethod = 'Otro';
     }
 
@@ -1095,8 +1358,13 @@ async function confirmCloseSaleWithPayment(saleId, saleTotal) {
     } catch (error) {
         console.error('Error closing sale:', error);
 
-        // Fallback to offline mode
-        closeSaleOffline(saleId, primaryMethod, paymentBreakdown, tip);
+        // Fallback to offline mode (test mode only)
+        if (isTestMode()) {
+            closeSaleOffline(saleId, primaryMethod, paymentBreakdown, tip);
+        } else {
+            document.getElementById('payment-modal').remove();
+            showToast('Error al cerrar venta - Verifica tu conexión', 'error');
+        }
     }
 }
 
@@ -1153,10 +1421,181 @@ async function confirmCloseSale(saleId, paymentMethod) {
 /**
  * Delete active sale with confirmation
  */
-async function deleteActiveSaleConfirm(saleId) {
+async function deleteActiveSaleConfirm(saleId, skipConfirmation = false) {
+    if (!skipConfirmation) {
+        const confirmed = await showConfirm(
+            'Esta acción no se puede deshacer.',
+            'Eliminar Venta',
+            {
+                confirmText: 'Sí, eliminar',
+                cancelText: 'Cancelar',
+                confirmColor: 'var(--color-danger)',
+                icon: '⚠️'
+            }
+        );
+
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    try {
+        await deleteActiveSale(saleId);
+        if (!skipConfirmation) {
+            showToast('Venta eliminada correctamente', 'success');
+        }
+        loadActiveSales();
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+
+        // Fallback to localStorage deletion (test mode only)
+        if (isTestMode()) {
+            let activeSales = JSON.parse(localStorage.getItem('salesActive') || '[]');
+            const saleIndex = activeSales.findIndex(s => s.id === saleId);
+
+            if (saleIndex !== -1) {
+                activeSales.splice(saleIndex, 1);
+                localStorage.setItem('salesActive', JSON.stringify(activeSales));
+                loadActiveSales();
+                if (!skipConfirmation) {
+                    showToast('Venta eliminada correctamente', 'success');
+                }
+            } else {
+                if (!skipConfirmation) {
+                    showToast('Error al eliminar la venta', 'error');
+                }
+            }
+        } else {
+            if (!skipConfirmation) {
+                showToast('Error al eliminar - Verifica tu conexión', 'error');
+            }
+        }
+    }
+}
+
+/**
+ * Toggle payment breakdown visibility
+ */
+function togglePaymentBreakdown(saleId) {
+    const breakdown = document.getElementById(`breakdown-${saleId}`);
+    const icon = document.getElementById(`breakdown-icon-${saleId}`);
+
+    if (breakdown.style.display === 'none' || breakdown.style.display === '') {
+        breakdown.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        breakdown.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+/**
+ * Edit active sale - load it into the current sale form
+ */
+function editActiveSale(saleId) {
+    let sales = getActiveSales();
+
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode() && (!sales || sales.length === 0)) {
+        sales = JSON.parse(localStorage.getItem('salesActive') || '[]');
+    }
+
+    const sale = sales.find(s => s.id === saleId);
+    if (!sale) {
+        showToast('Venta no encontrada', 'error');
+        return;
+    }
+
+    // Load sale into current sale
+    currentSale = {
+        items: [...sale.items],
+        total: sale.total
+    };
+
+    // Delete the active sale
+    deleteActiveSaleConfirm(saleId, true);
+
+    // Switch to new sale tab
+    document.querySelector('.tab-btn[data-tab="nueva-venta"]').click();
+
+    // Update summary
+    updateSaleSummary();
+
+    showToast('Venta cargada para edición', 'info');
+}
+
+/**
+ * Edit closed sale - reopen it as active
+ */
+async function editClosedSale(saleId) {
+    // Only available in test mode
+    if (!isTestMode()) {
+        showToast('Función no disponible', 'warning');
+        return;
+    }
+
     const confirmed = await showConfirm(
-        'Esta acción no se puede deshacer.',
-        'Eliminar Venta',
+        '¿Deseas reabrir esta venta para editarla? Se moverá a ventas activas.',
+        'Editar Venta Cerrada',
+        {
+            confirmText: 'Sí, editar',
+            cancelText: 'Cancelar',
+            icon: '✏️'
+        }
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    let closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    const saleIndex = closedSales.findIndex(s => s.id === saleId);
+
+    if (saleIndex === -1) {
+        showToast('Venta no encontrada', 'error');
+        return;
+    }
+
+    // Get the sale and remove payment info
+    const sale = closedSales[saleIndex];
+    sale.status = 'active';
+    delete sale.paymentMethod;
+    delete sale.paymentBreakdown;
+    delete sale.tip;
+    delete sale.closedAt;
+
+    // Move to active sales
+    const activeSales = JSON.parse(localStorage.getItem('salesActive') || '[]');
+    activeSales.push(sale);
+    closedSales.splice(saleIndex, 1);
+
+    // Update localStorage
+    localStorage.setItem('salesActive', JSON.stringify(activeSales));
+    localStorage.setItem('salesClosed', JSON.stringify(closedSales));
+
+    // Reload views
+    loadActiveSales();
+    loadClosedSales();
+
+    // Switch to active sales tab
+    document.querySelector('.tab-btn[data-tab="ventas-activas"]').click();
+
+    showToast('Venta reabierta para edición', 'success');
+}
+
+/**
+ * Delete closed sale with confirmation
+ */
+async function deleteClosedSaleConfirm(saleId) {
+    // Only available in test mode
+    if (!isTestMode()) {
+        showToast('Función no disponible', 'warning');
+        return;
+    }
+
+    const confirmed = await showConfirm(
+        'Esta acción eliminará permanentemente esta venta. ¿Estás seguro?',
+        'Eliminar Venta Cerrada',
         {
             confirmText: 'Sí, eliminar',
             cancelText: 'Cancelar',
@@ -1169,12 +1608,18 @@ async function deleteActiveSaleConfirm(saleId) {
         return;
     }
 
-    try {
-        await deleteActiveSale(saleId);
-        showToast('Venta eliminada correctamente', 'success');
-        loadActiveSales();
-    } catch (error) {
-        console.error('Error deleting sale:', error);
-        showToast('Error al eliminar la venta', 'error');
+    // Delete from localStorage
+    let closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    const saleIndex = closedSales.findIndex(s => s.id === saleId);
+
+    if (saleIndex === -1) {
+        showToast('Venta no encontrada', 'error');
+        return;
     }
+
+    closedSales.splice(saleIndex, 1);
+    localStorage.setItem('salesClosed', JSON.stringify(closedSales));
+
+    loadClosedSales();
+    showToast('Venta eliminada correctamente', 'success');
 }

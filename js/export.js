@@ -17,11 +17,16 @@ function exportData() {
 
     // Get data
     let closedSales = getClosedSales();
-    const expenses = getExpenses();
+    let expenses = getExpenses();
 
-    // Fallback to localStorage if API fails
-    if (!closedSales || closedSales.length === 0) {
-        closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+    // Fallback to localStorage if API fails (test mode only)
+    if (isTestMode()) {
+        if (!closedSales || closedSales.length === 0) {
+            closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
+        }
+        if (!expenses || expenses.length === 0) {
+            expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+        }
     }
 
     // Filter by period
@@ -63,9 +68,28 @@ function exportToCsv(sales, expenses, filename) {
     csv += `Ganancia Neta,$${netProfit.toFixed(2)}\n\n`;
 
     // Payment method breakdown
-    const cash = sales.filter(s => s.paymentMethod === 'Efectivo').reduce((sum, s) => sum + s.total, 0);
-    const transfer = sales.filter(s => s.paymentMethod === 'Transferencia').reduce((sum, s) => sum + s.total, 0);
-    const other = sales.filter(s => s.paymentMethod === 'Otro').reduce((sum, s) => sum + s.total, 0);
+    let cash = 0;
+    let transfer = 0;
+    let other = 0;
+
+    sales.forEach(sale => {
+        // Check if sale has payment breakdown (split payment)
+        if (sale.paymentBreakdown && Object.values(sale.paymentBreakdown).some(v => v > 0)) {
+            // Use breakdown amounts
+            cash += sale.paymentBreakdown.Efectivo || 0;
+            transfer += sale.paymentBreakdown.Transferencia || 0;
+            other += sale.paymentBreakdown.Otro || 0;
+        } else {
+            // Legacy: use primary payment method
+            if (sale.paymentMethod === 'Efectivo') {
+                cash += sale.total;
+            } else if (sale.paymentMethod === 'Transferencia') {
+                transfer += sale.total;
+            } else if (sale.paymentMethod === 'Otro') {
+                other += sale.total;
+            }
+        }
+    });
 
     csv += '=== VENTAS POR MÉTODO DE PAGO ===\n';
     csv += 'Método,Monto\n';
