@@ -57,10 +57,11 @@
 
         .login-container {
             background: white;
-            border-radius: 24px;
+            border-radius: 28px;
             box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.3),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+                0 30px 90px rgba(0, 0, 0, 0.25),
+                0 10px 40px rgba(216, 67, 21, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset;
             padding: 3rem 2.5rem;
             width: 100%;
             animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -68,17 +69,58 @@
             overflow: hidden;
         }
 
-        /* Subtle top accent */
+        /* Decorative gradient top bar */
         .login-container::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #D84315, #BF360C, #D84315);
-            background-size: 200% 100%;
-            animation: gradientShift 3s ease infinite;
+            height: 6px;
+            background: linear-gradient(90deg, #D84315, #FF6F00, #BF360C, #D84315);
+            background-size: 300% 100%;
+            animation: gradientShift 4s ease infinite;
+        }
+
+        /* Decorative corner elements */
+        .login-container::after {
+            content: '';
+            position: absolute;
+            bottom: -100px;
+            right: -100px;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(216, 67, 21, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Top corner decoration */
+        .login-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            left: -120px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Bottom corner decoration */
+        .login-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: -150px;
+            right: -150px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
         }
 
         @keyframes gradientShift {
@@ -100,21 +142,24 @@
         .logo {
             text-align: center;
             margin-bottom: 2.5rem;
+            position: relative;
+            z-index: 1;
         }
 
         .logo-img {
-            max-width: 200px;
+            max-width: 280px;
             width: 100%;
             height: auto;
-            margin-bottom: 1.25rem;
-            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+            margin: 0 auto 1.5rem;
+            display: block;
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.15));
             animation: fadeIn 0.8s ease-out 0.2s both;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: scale(0.9);
+                transform: scale(0.92);
             }
             to {
                 opacity: 1;
@@ -122,28 +167,24 @@
             }
         }
 
-        h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #D84315, #BF360C);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-align: center;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-
         .subtitle {
             text-align: center;
             color: #757575;
-            font-size: 0.9375rem;
+            font-size: 1.0625rem;
             margin-bottom: 2.5rem;
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .form-group {
             margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        form {
+            position: relative;
+            z-index: 1;
         }
 
         label {
@@ -312,12 +353,12 @@
                 border-radius: 20px;
             }
 
-            h1 {
-                font-size: 1.5rem;
+            .logo-img {
+                max-width: 220px;
             }
 
-            .logo-img {
-                max-width: 160px;
+            .subtitle {
+                font-size: 0.9375rem;
             }
 
             input {
@@ -334,8 +375,7 @@
     <div class="login-wrapper">
         <div class="login-container">
             <div class="logo">
-                <img src="assets/favicon-logo-square.png" alt="Asador Callejero Catorce" class="logo-img">
-                <h1>Asador Callejero Catorce</h1>
+                <img src="/assets/favicon-logo-square.png" alt="Asador Callejero Catorce" class="logo-img" onerror="console.error('Logo failed to load:', this.src); this.style.border='2px solid red';">
                 <p class="subtitle">Sistema de Gestión</p>
             </div>
 
