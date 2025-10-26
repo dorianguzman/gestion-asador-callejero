@@ -307,28 +307,17 @@
             <div class="card filter-card">
                 <h3>Filtrar Periodo</h3>
                 <div class="filter-controls">
-                    <label>
-                        Mes:
-                        <select id="report-month">
-                            <option value="">Todos</option>
-                            <option value="1">Enero</option>
-                            <option value="2">Febrero</option>
-                            <option value="3">Marzo</option>
-                            <option value="4">Abril</option>
-                            <option value="5">Mayo</option>
-                            <option value="6">Junio</option>
-                            <option value="7">Julio</option>
-                            <option value="8">Agosto</option>
-                            <option value="9">Septiembre</option>
-                            <option value="10">Octubre</option>
-                            <option value="11">Noviembre</option>
-                            <option value="12">Diciembre</option>
-                        </select>
-                    </label>
-                    <label>
-                        Año:
-                        <select id="report-year">
-                            <!-- Populated dynamically -->
+                    <label style="width: 100%;">
+                        Periodo:
+                        <select id="report-period" style="width: 100%;">
+                            <option value="today">Hoy</option>
+                            <option value="week">Esta Semana (Lun-Dom)</option>
+                            <option value="biweekly">Última Quincena (2 semanas)</option>
+                            <option value="month" selected>Este Mes</option>
+                            <option value="quarter">Este Trimestre</option>
+                            <option value="semester">Este Semestre</option>
+                            <option value="year">Este Año</option>
+                            <option value="all">Todo</option>
                         </select>
                     </label>
                     <div style="display: flex; gap: 0.5rem;">

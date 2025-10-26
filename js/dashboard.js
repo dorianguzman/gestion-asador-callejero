@@ -10,47 +10,15 @@ let expenseBreakdownChart = null;
  * Initialize dashboard
  */
 function initializeDashboard() {
-    // Populate year selector
-    populateYearSelector();
-
-    // Set current month and year as default
-    const now = new Date();
-    document.getElementById('report-month').value = (now.getMonth() + 1).toString();
-    document.getElementById('report-year').value = now.getFullYear().toString();
-
-    // Generate initial report
+    // Generate initial report (default is "Este Mes")
     generateReport();
-}
-
-/**
- * Populate year selector
- */
-function populateYearSelector() {
-    const yearSelect = document.getElementById('report-year');
-    const currentYear = new Date().getFullYear();
-
-    // Add years from 2020 to current year + 1
-    for (let year = 2020; year <= currentYear + 1; year++) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    }
-
-    yearSelect.value = currentYear.toString();
 }
 
 /**
  * Generate report based on selected period
  */
 function generateReport() {
-    const month = document.getElementById('report-month').value;
-    const year = document.getElementById('report-year').value;
-
-    if (!year) {
-        showToast('Por favor selecciona un año', 'warning');
-        return;
-    }
+    const period = document.getElementById('report-period').value;
 
     let closedSales = getClosedSales();
     let expenses = getExpenses();
@@ -66,8 +34,9 @@ function generateReport() {
     }
 
     // Filter by period
-    const filteredSales = filterByPeriod(closedSales, month, year);
-    const filteredExpenses = filterByPeriod(expenses, month, year);
+    const periodRange = getPeriodRange(period);
+    const filteredSales = filterByPeriod(closedSales, periodRange);
+    const filteredExpenses = filterByPeriod(expenses, periodRange);
 
     // Calculate totals with tips separated
     const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
@@ -87,34 +56,100 @@ function generateReport() {
 
     // Update additional analytics
     updatePaymentBreakdown(filteredSales);
-    updateAverageSales(filteredSales, month, year);
+    updateAverageSales(filteredSales, periodRange);
     updateTopProducts(filteredSales);
 
     // Update charts
-    updateRevenueExpensesChart(month, year);
+    updateRevenueExpensesChart(periodRange);
     updateExpenseBreakdownChart(filteredExpenses);
+}
+
+/**
+ * Get period range based on selected period type
+ */
+function getPeriodRange(period) {
+    const now = new Date();
+    let start, end;
+
+    switch (period) {
+        case 'today':
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            break;
+
+        case 'week':
+            // Monday to Sunday
+            const dayOfWeek = now.getDay();
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0, so go back 6 days
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToMonday);
+            end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            end.setHours(23, 59, 59, 999);
+            break;
+
+        case 'biweekly':
+            // Last 14 days
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13);
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+            break;
+
+        case 'month':
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+
+        case 'quarter':
+            // Current quarter (Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec)
+            const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+            start = new Date(now.getFullYear(), quarterStartMonth, 1);
+            end = new Date(now.getFullYear(), quarterStartMonth + 3, 0, 23, 59, 59, 999);
+            break;
+
+        case 'semester':
+            // Current semester (H1: Jan-Jun, H2: Jul-Dec)
+            const semesterStartMonth = now.getMonth() < 6 ? 0 : 6;
+            start = new Date(now.getFullYear(), semesterStartMonth, 1);
+            end = new Date(now.getFullYear(), semesterStartMonth + 6, 0, 23, 59, 59, 999);
+            break;
+
+        case 'year':
+            start = new Date(now.getFullYear(), 0, 1);
+            end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+            break;
+
+        case 'all':
+            start = null;
+            end = null;
+            break;
+
+        default:
+            // Default to this month
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+
+    return { start, end, period };
 }
 
 /**
  * Filter data by period
  */
-function filterByPeriod(data, month, year) {
+function filterByPeriod(data, periodRange) {
+    // If period is "all", return all data
+    if (!periodRange.start && !periodRange.end) {
+        return data;
+    }
+
     return data.filter(item => {
         const date = new Date(item.closedAt || item.date || item.createdAt);
-        const itemYear = date.getFullYear();
-        const itemMonth = date.getMonth() + 1;
-
-        const yearMatch = itemYear.toString() === year;
-        const monthMatch = !month || itemMonth.toString() === month;
-
-        return yearMatch && monthMatch;
+        return date >= periodRange.start && date <= periodRange.end;
     });
 }
 
 /**
  * Update revenue vs expenses chart
  */
-function updateRevenueExpensesChart(month, year) {
+function updateRevenueExpensesChart(periodRange) {
     let closedSales = getClosedSales();
     let expenses = getExpenses();
 
@@ -128,53 +163,137 @@ function updateRevenueExpensesChart(month, year) {
         }
     }
 
+    // Filter data by period
+    const filteredSales = filterByPeriod(closedSales, periodRange);
+    const filteredExpenses = filterByPeriod(expenses, periodRange);
+
     let labels, revenueData, expenseData;
 
-    if (month) {
-        // Show daily data for the selected month
-        const daysInMonth = new Date(year, month, 0).getDate();
-        labels = Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+    switch (periodRange.period) {
+        case 'today':
+            // Show hourly data (24 hours)
+            labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            revenueData = new Array(24).fill(0);
+            expenseData = new Array(24).fill(0);
 
-        revenueData = new Array(daysInMonth).fill(0);
-        expenseData = new Array(daysInMonth).fill(0);
+            filteredSales.forEach(sale => {
+                const hour = new Date(sale.closedAt).getHours();
+                revenueData[hour] += sale.total;
+            });
 
-        closedSales.forEach(sale => {
-            const date = new Date(sale.closedAt);
-            if (date.getFullYear().toString() === year && (date.getMonth() + 1).toString() === month) {
-                const day = date.getDate() - 1;
+            filteredExpenses.forEach(expense => {
+                const hour = new Date(expense.date || expense.createdAt).getHours();
+                expenseData[hour] += expense.amount;
+            });
+            break;
+
+        case 'week':
+        case 'biweekly':
+            // Show daily data
+            const days = periodRange.period === 'week' ? 7 : 14;
+            labels = [];
+            revenueData = new Array(days).fill(0);
+            expenseData = new Array(days).fill(0);
+
+            // Generate labels
+            for (let i = 0; i < days; i++) {
+                const date = new Date(periodRange.start);
+                date.setDate(date.getDate() + i);
+                labels.push(`${date.getDate()}/${date.getMonth() + 1}`);
+            }
+
+            filteredSales.forEach(sale => {
+                const date = new Date(sale.closedAt);
+                const daysDiff = Math.floor((date - periodRange.start) / (1000 * 60 * 60 * 24));
+                if (daysDiff >= 0 && daysDiff < days) {
+                    revenueData[daysDiff] += sale.total;
+                }
+            });
+
+            filteredExpenses.forEach(expense => {
+                const date = new Date(expense.date || expense.createdAt);
+                const daysDiff = Math.floor((date - periodRange.start) / (1000 * 60 * 60 * 24));
+                if (daysDiff >= 0 && daysDiff < days) {
+                    expenseData[daysDiff] += expense.amount;
+                }
+            });
+            break;
+
+        case 'month':
+            // Show daily data for the month
+            const daysInMonth = new Date(periodRange.end.getFullYear(), periodRange.end.getMonth() + 1, 0).getDate();
+            labels = Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString());
+            revenueData = new Array(daysInMonth).fill(0);
+            expenseData = new Array(daysInMonth).fill(0);
+
+            filteredSales.forEach(sale => {
+                const day = new Date(sale.closedAt).getDate() - 1;
                 revenueData[day] += sale.total;
-            }
-        });
+            });
 
-        expenses.forEach(expense => {
-            const date = new Date(expense.date || expense.createdAt);
-            if (date.getFullYear().toString() === year && (date.getMonth() + 1).toString() === month) {
-                const day = date.getDate() - 1;
+            filteredExpenses.forEach(expense => {
+                const day = new Date(expense.date || expense.createdAt).getDate() - 1;
                 expenseData[day] += expense.amount;
-            }
-        });
-    } else {
-        // Show monthly data for the entire year
-        labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            });
+            break;
 
-        revenueData = new Array(12).fill(0);
-        expenseData = new Array(12).fill(0);
+        case 'quarter':
+        case 'semester':
+        case 'year':
+        case 'all':
+            // Show monthly data
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-        closedSales.forEach(sale => {
-            const date = new Date(sale.closedAt);
-            if (date.getFullYear().toString() === year) {
-                const monthIndex = date.getMonth();
-                revenueData[monthIndex] += sale.total;
-            }
-        });
+            if (periodRange.period === 'all') {
+                // For "all", show all months that have data
+                labels = monthNames;
+                revenueData = new Array(12).fill(0);
+                expenseData = new Array(12).fill(0);
 
-        expenses.forEach(expense => {
-            const date = new Date(expense.date || expense.createdAt);
-            if (date.getFullYear().toString() === year) {
-                const monthIndex = date.getMonth();
-                expenseData[monthIndex] += expense.amount;
+                filteredSales.forEach(sale => {
+                    const monthIndex = new Date(sale.closedAt).getMonth();
+                    revenueData[monthIndex] += sale.total;
+                });
+
+                filteredExpenses.forEach(expense => {
+                    const monthIndex = new Date(expense.date || expense.createdAt).getMonth();
+                    expenseData[monthIndex] += expense.amount;
+                });
+            } else {
+                // For specific periods, show only relevant months
+                const startMonth = periodRange.start.getMonth();
+                const endMonth = periodRange.end.getMonth();
+                const monthsInPeriod = endMonth - startMonth + 1;
+
+                labels = [];
+                for (let i = 0; i < monthsInPeriod; i++) {
+                    labels.push(monthNames[startMonth + i]);
+                }
+
+                revenueData = new Array(monthsInPeriod).fill(0);
+                expenseData = new Array(monthsInPeriod).fill(0);
+
+                filteredSales.forEach(sale => {
+                    const monthIndex = new Date(sale.closedAt).getMonth() - startMonth;
+                    if (monthIndex >= 0 && monthIndex < monthsInPeriod) {
+                        revenueData[monthIndex] += sale.total;
+                    }
+                });
+
+                filteredExpenses.forEach(expense => {
+                    const monthIndex = new Date(expense.date || expense.createdAt).getMonth() - startMonth;
+                    if (monthIndex >= 0 && monthIndex < monthsInPeriod) {
+                        expenseData[monthIndex] += expense.amount;
+                    }
+                });
             }
-        });
+            break;
+
+        default:
+            // Default to monthly view
+            labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            revenueData = new Array(12).fill(0);
+            expenseData = new Array(12).fill(0);
     }
 
     const ctx = document.getElementById('revenueExpensesChart').getContext('2d');
@@ -333,38 +452,35 @@ function updatePaymentBreakdown(sales) {
 /**
  * Update average sales metrics
  */
-function updateAverageSales(sales, month, year) {
+function updateAverageSales(sales, periodRange) {
     const totalSales = sales.length;
     const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
     const avgSale = totalSales > 0 ? totalRevenue / totalSales : 0;
 
     // Calculate days in period
     let daysInPeriod;
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
 
-    if (month) {
-        const totalDaysInMonth = new Date(year, month, 0).getDate();
-
-        // If this is the current month and year, only count days up to today
-        if (parseInt(year) === currentYear && parseInt(month) === currentMonth) {
-            daysInPeriod = now.getDate();
+    if (!periodRange.start || !periodRange.end) {
+        // For "all" period, calculate from first sale to last sale
+        if (sales.length > 0) {
+            const dates = sales.map(s => new Date(s.closedAt || s.createdAt));
+            const firstDate = new Date(Math.min(...dates));
+            const lastDate = new Date(Math.max(...dates));
+            daysInPeriod = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
         } else {
-            daysInPeriod = totalDaysInMonth;
+            daysInPeriod = 1;
         }
     } else {
-        // Full year
-        if (parseInt(year) === currentYear) {
-            // Current year - count days from Jan 1 to today
-            const start = new Date(year, 0, 1);
-            daysInPeriod = Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1;
-        } else {
-            // Past/future year - full 365/366 days
-            const start = new Date(year, 0, 1);
-            const end = new Date(year, 11, 31);
-            daysInPeriod = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        // Calculate days between start and end
+        const now = new Date();
+        let endDate = periodRange.end;
+
+        // If the end date is in the future, use today instead
+        if (endDate > now) {
+            endDate = now;
         }
+
+        daysInPeriod = Math.ceil((endDate - periodRange.start) / (1000 * 60 * 60 * 24)) + 1;
     }
 
     const avgDaily = daysInPeriod > 0 ? totalRevenue / daysInPeriod : 0;
