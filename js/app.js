@@ -757,10 +757,427 @@ function loadSettings() {
 }
 
 /**
- * Show menu management (placeholder)
+ * Show menu management
  */
 function showMenuManagement() {
-    showToast('Gestión de menú - Próximamente', 'info');
+    const menu = getMenu();
+    if (!menu) {
+        showToast('Error al cargar menú', 'error');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'menu-editor-modal';
+
+    const categoriesHTML = menu.categories.map((category, catIndex) => {
+        const itemsHTML = category.items.map((item, itemIndex) => `
+            <div style="background: #f5f5f5; padding: 0.75rem; margin: 0.5rem 0; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--color-text);">${item.name}</div>
+                    <div style="font-size: 0.875rem; color: var(--color-text-light);">$${item.price.toFixed(2)}</div>
+                    ${item.quantity ? `<div style="font-size: 0.75rem; color: var(--color-success);">Pack de ${item.quantity}</div>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer;">
+                        <input type="checkbox" ${item.available ? 'checked' : ''} onchange="toggleItemAvailability(${catIndex}, ${itemIndex})" style="cursor: pointer;">
+                        Disponible
+                    </label>
+                    <button onclick="editMenuItem(${catIndex}, ${itemIndex})" style="background: #E8F5E9; color: #2E7D32; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button onclick="deleteMenuItem(${catIndex}, ${itemIndex})" style="background: #FFEBEE; color: var(--color-danger); border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div style="background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h4 style="margin: 0; color: var(--color-primary);">${category.name}</h4>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="addMenuItem(${catIndex})" style="background: var(--color-primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">
+                            + Item
+                        </button>
+                        <button onclick="editCategory(${catIndex})" style="background: #E8F5E9; color: #2E7D32; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;">
+                            ✏️
+                        </button>
+                        <button onclick="deleteCategory(${catIndex})" style="background: #FFEBEE; color: var(--color-danger); border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+                <div>${itemsHTML}</div>
+            </div>
+        `;
+    }).join('');
+
+    modal.innerHTML = `
+        <div class="modal-container" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0;">Gestión de Menú</h3>
+                    <button onclick="closeMenuEditor()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text-light);">×</button>
+                </div>
+
+                <div id="menu-categories-list">
+                    ${categoriesHTML}
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button onclick="addNewCategory()" style="flex: 1; background: var(--color-primary); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        + Nueva Categoría
+                    </button>
+                    <button onclick="saveMenuChanges()" style="flex: 1; background: var(--color-success); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        💾 Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add('active'), 10);
+}
+
+/**
+ * Close menu editor
+ */
+function closeMenuEditor() {
+    const modal = document.getElementById('menu-editor-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => document.body.removeChild(modal), 300);
+    }
+}
+
+/**
+ * Toggle item availability
+ */
+function toggleItemAvailability(catIndex, itemIndex) {
+    const menu = getMenu();
+    menu.categories[catIndex].items[itemIndex].available = !menu.categories[catIndex].items[itemIndex].available;
+
+    // Update the menu in cache (will be saved when user clicks save button)
+    dataCache.menu = menu;
+}
+
+/**
+ * Add new category
+ */
+async function addNewCategory() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3>Nueva Categoría</h3>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre de la categoría:</label>
+                    <input type="text" id="new-category-name" placeholder="Ej: Postres" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                    <button class="modal-btn modal-btn-confirm" onclick="confirmAddCategory()">Agregar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => {
+        modal.classList.add('active');
+        document.getElementById('new-category-name').focus();
+    }, 10);
+}
+
+/**
+ * Confirm add category
+ */
+function confirmAddCategory() {
+    const name = document.getElementById('new-category-name').value.trim();
+    if (!name) {
+        showToast('Por favor ingresa un nombre', 'warning');
+        return;
+    }
+
+    const menu = getMenu();
+    const newCategoryId = name.toLowerCase().replace(/\s+/g, '-');
+
+    menu.categories.push({
+        id: newCategoryId,
+        name: name,
+        items: []
+    });
+
+    dataCache.menu = menu;
+
+    // Close modal and refresh
+    document.querySelector('.modal-overlay:last-child').remove();
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Categoría agregada', 'success');
+}
+
+/**
+ * Edit category
+ */
+async function editCategory(catIndex) {
+    const menu = getMenu();
+    const category = menu.categories[catIndex];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3>Editar Categoría</h3>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre:</label>
+                    <input type="text" id="edit-category-name" value="${category.name}" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                    <button class="modal-btn modal-btn-confirm" onclick="confirmEditCategory(${catIndex})">Guardar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => {
+        modal.classList.add('active');
+        document.getElementById('edit-category-name').focus();
+    }, 10);
+}
+
+/**
+ * Confirm edit category
+ */
+function confirmEditCategory(catIndex) {
+    const name = document.getElementById('edit-category-name').value.trim();
+    if (!name) {
+        showToast('Por favor ingresa un nombre', 'warning');
+        return;
+    }
+
+    const menu = getMenu();
+    menu.categories[catIndex].name = name;
+    dataCache.menu = menu;
+
+    document.querySelector('.modal-overlay:last-child').remove();
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Categoría actualizada', 'success');
+}
+
+/**
+ * Delete category
+ */
+async function deleteCategory(catIndex) {
+    const menu = getMenu();
+    const category = menu.categories[catIndex];
+
+    const confirmed = await showConfirm(
+        `¿Eliminar la categoría "${category.name}" y todos sus items?`,
+        'Eliminar Categoría',
+        {
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            confirmColor: 'var(--color-danger)',
+            icon: '⚠️'
+        }
+    );
+
+    if (!confirmed) return;
+
+    menu.categories.splice(catIndex, 1);
+    dataCache.menu = menu;
+
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Categoría eliminada', 'success');
+}
+
+/**
+ * Add menu item
+ */
+async function addMenuItem(catIndex) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3>Nuevo Item</h3>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre:</label>
+                    <input type="text" id="new-item-name" placeholder="Ej: Taco de Pollo" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Precio (MXN):</label>
+                    <input type="number" id="new-item-price" placeholder="0.00" step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                    <button class="modal-btn modal-btn-confirm" onclick="confirmAddMenuItem(${catIndex})">Agregar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => {
+        modal.classList.add('active');
+        document.getElementById('new-item-name').focus();
+    }, 10);
+}
+
+/**
+ * Confirm add menu item
+ */
+function confirmAddMenuItem(catIndex) {
+    const name = document.getElementById('new-item-name').value.trim();
+    const price = parseFloat(document.getElementById('new-item-price').value);
+
+    if (!name) {
+        showToast('Por favor ingresa un nombre', 'warning');
+        return;
+    }
+    if (!price || price <= 0) {
+        showToast('Por favor ingresa un precio válido', 'warning');
+        return;
+    }
+
+    const menu = getMenu();
+    const itemId = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
+
+    menu.categories[catIndex].items.push({
+        id: itemId,
+        name: name,
+        price: price,
+        available: true
+    });
+
+    dataCache.menu = menu;
+
+    document.querySelector('.modal-overlay:last-child').remove();
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Item agregado', 'success');
+}
+
+/**
+ * Edit menu item
+ */
+async function editMenuItem(catIndex, itemIndex) {
+    const menu = getMenu();
+    const item = menu.categories[catIndex].items[itemIndex];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <h3>Editar Item</h3>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre:</label>
+                    <input type="text" id="edit-item-name" value="${item.name}" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Precio (MXN):</label>
+                    <input type="number" id="edit-item-price" value="${item.price}" step="0.01" min="0" style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-primary); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+                    <button class="modal-btn modal-btn-confirm" onclick="confirmEditMenuItem(${catIndex}, ${itemIndex})">Guardar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => {
+        modal.classList.add('active');
+        document.getElementById('edit-item-name').focus();
+    }, 10);
+}
+
+/**
+ * Confirm edit menu item
+ */
+function confirmEditMenuItem(catIndex, itemIndex) {
+    const name = document.getElementById('edit-item-name').value.trim();
+    const price = parseFloat(document.getElementById('edit-item-price').value);
+
+    if (!name) {
+        showToast('Por favor ingresa un nombre', 'warning');
+        return;
+    }
+    if (!price || price <= 0) {
+        showToast('Por favor ingresa un precio válido', 'warning');
+        return;
+    }
+
+    const menu = getMenu();
+    menu.categories[catIndex].items[itemIndex].name = name;
+    menu.categories[catIndex].items[itemIndex].price = price;
+    dataCache.menu = menu;
+
+    document.querySelector('.modal-overlay:last-child').remove();
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Item actualizado', 'success');
+}
+
+/**
+ * Delete menu item
+ */
+async function deleteMenuItem(catIndex, itemIndex) {
+    const menu = getMenu();
+    const item = menu.categories[catIndex].items[itemIndex];
+
+    const confirmed = await showConfirm(
+        `¿Eliminar "${item.name}"?`,
+        'Eliminar Item',
+        {
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            confirmColor: 'var(--color-danger)',
+            icon: '⚠️'
+        }
+    );
+
+    if (!confirmed) return;
+
+    menu.categories[catIndex].items.splice(itemIndex, 1);
+    dataCache.menu = menu;
+
+    closeMenuEditor();
+    showMenuManagement();
+    showToast('Item eliminado', 'success');
+}
+
+/**
+ * Save menu changes to D1
+ */
+async function saveMenuChanges() {
+    try {
+        updateSyncStatus('syncing');
+
+        await updateMenu(dataCache.menu);
+
+        updateSyncStatus('idle');
+        showToast('Menú guardado exitosamente', 'success');
+        closeMenuEditor();
+    } catch (error) {
+        console.error('Error saving menu:', error);
+        updateSyncStatus('idle');
+        showToast('Error al guardar menú', 'error');
+    }
 }
 
 /**

@@ -1528,12 +1528,6 @@ function editActiveSale(saleId) {
  * Edit closed sale - reopen it as active
  */
 async function editClosedSale(saleId) {
-    // Only available in test mode
-    if (!isTestMode()) {
-        showToast('Función no disponible', 'warning');
-        return;
-    }
-
     const confirmed = await showConfirm(
         '¿Deseas reabrir esta venta para editarla? Se moverá a ventas activas.',
         'Editar Venta Cerrada',
@@ -1587,12 +1581,6 @@ async function editClosedSale(saleId) {
  * Delete closed sale with confirmation
  */
 async function deleteClosedSaleConfirm(saleId) {
-    // Only available in test mode
-    if (!isTestMode()) {
-        showToast('Función no disponible', 'warning');
-        return;
-    }
-
     const confirmed = await showConfirm(
         'Esta acción eliminará permanentemente esta venta. ¿Estás seguro?',
         'Eliminar Venta Cerrada',
