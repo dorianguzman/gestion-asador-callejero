@@ -202,6 +202,51 @@ async function closeSale(saleId, paymentMethod) {
 }
 
 /**
+ * Close a sale with payment breakdown and tip
+ */
+async function closeSaleWithPayment(saleId, paymentMethod, paymentBreakdown, tip) {
+    try {
+        updateSyncStatus('syncing');
+
+        const response = await fetch('/api/sales-closed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                saleId,
+                paymentMethod,
+                paymentBreakdown,
+                tip
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to close sale');
+        }
+
+        // Update cache
+        const saleIndex = dataCache.salesActive.findIndex(s => s.id === saleId);
+        if (saleIndex !== -1) {
+            const sale = dataCache.salesActive[saleIndex];
+            sale.status = 'closed';
+            sale.paymentMethod = paymentMethod;
+            sale.paymentBreakdown = paymentBreakdown;
+            sale.tip = tip;
+            sale.closedAt = new Date().toISOString();
+
+            dataCache.salesClosed.unshift(sale);
+            dataCache.salesActive.splice(saleIndex, 1);
+        }
+
+        updateSyncStatus('idle');
+        return true;
+    } catch (error) {
+        console.error('Error closing sale with payment:', error);
+        updateSyncStatus('idle');
+        throw error;
+    }
+}
+
+/**
  * Delete an active sale
  */
 async function deleteActiveSale(saleId) {

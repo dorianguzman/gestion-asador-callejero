@@ -118,15 +118,21 @@ function loadClosedSales() {
         new Date(b.closedAt) - new Date(a.closedAt)
     );
 
-    container.innerHTML = sortedSales.map(sale => `
+    container.innerHTML = sortedSales.map(sale => {
+        const hasTip = sale.tip && sale.tip > 0;
+        const hasPaymentBreakdown = sale.paymentBreakdown && Object.values(sale.paymentBreakdown).some(v => v > 0);
+        const saleSubtotal = hasTip ? sale.total - sale.tip : sale.total;
+
+        return `
         <div class="card" style="margin-bottom: 1rem; opacity: 0.9;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                         <h4>Venta #${sale.id.slice(-6)}</h4>
                         <span style="background: var(--color-success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
                             ${sale.paymentMethod || 'Pagado'}
                         </span>
+                        ${hasTip ? `<span style="background: var(--color-accent); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Con propina</span>` : ''}
                     </div>
                     <p style="color: var(--color-text-light); font-size: 0.875rem; margin: 0.5rem 0;">
                         ${new Date(sale.closedAt).toLocaleString('es-MX')}
@@ -134,13 +140,29 @@ function loadClosedSales() {
                     <div style="margin-top: 0.5rem; font-size: 0.875rem;">
                         ${sale.items.length} item${sale.items.length > 1 ? 's' : ''}
                     </div>
+                    ${hasPaymentBreakdown ? `
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--color-text-light);">
+                        ${Object.entries(sale.paymentBreakdown).filter(([_, amount]) => amount > 0).map(([method, amount]) =>
+                            `${method}: $${amount.toFixed(2)}`
+                        ).join(' + ')}
+                    </div>
+                    ` : ''}
+                    ${hasTip ? `
+                    <div style="margin-top: 0.5rem; font-size: 0.875rem;">
+                        <span style="color: var(--color-text-light);">Subtotal:</span> $${saleSubtotal.toFixed(2)}
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--color-success);">
+                        + Propina: $${sale.tip.toFixed(2)}
+                    </div>
+                    ` : ''}
                     <div style="margin-top: 0.5rem; font-weight: bold; font-size: 1.125rem; color: var(--color-primary);">
                         Total: $${sale.total.toFixed(2)} MXN
                     </div>
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
@@ -816,31 +838,93 @@ async function saveSale() {
 }
 
 /**
- * Show close sale modal
+ * Show close sale modal with tip and split payment support
  */
 function showCloseSaleModal(saleId) {
+    const sales = getActiveSales();
+    const sale = sales.find(s => s.id === saleId);
+    if (!sale) return;
+
+    const saleTotal = sale.total;
+
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    modal.id = 'payment-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; overflow-y: auto;';
 
     modal.innerHTML = `
-        <div class="card" style="max-width: 400px; width: 90%; margin: 1rem;">
-            <h3>Cerrar Venta</h3>
-            <p style="margin-bottom: 1rem;">Selecciona el método de pago:</p>
-            <button class="primary" onclick="confirmCloseSale('${saleId}', 'Efectivo'); this.parentElement.parentElement.remove();"
-                style="width: 100%; margin-bottom: 0.5rem;">
-                💵 Efectivo
-            </button>
-            <button class="primary" onclick="confirmCloseSale('${saleId}', 'Transferencia'); this.parentElement.parentElement.remove();"
-                style="width: 100%; margin-bottom: 0.5rem;">
-                🏦 Transferencia
-            </button>
-            <button class="primary" onclick="confirmCloseSale('${saleId}', 'Otro'); this.parentElement.parentElement.remove();"
-                style="width: 100%; margin-bottom: 0.5rem;">
-                💳 Otro
-            </button>
-            <button class="secondary" onclick="this.parentElement.parentElement.remove()" style="width: 100%; margin-top: 1rem;">
-                Cancelar
-            </button>
+        <div class="card" style="max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-bottom: 1rem;">Cerrar Venta</h3>
+
+            <!-- Sale Total -->
+            <div style="background: var(--color-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 500;">Total venta:</span>
+                    <span style="font-weight: 700; font-size: 1.125rem;">$${saleTotal.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <!-- Tip Section -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Propina:</label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 10)" style="padding: 0.625rem;">10%</button>
+                    <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 15)" style="padding: 0.625rem;">15%</button>
+                    <button class="secondary tip-btn" onclick="setTipPercentage(${saleTotal}, 20)" style="padding: 0.625rem;">20%</button>
+                </div>
+                <input type="number" id="tip-custom" placeholder="Propina personalizada"
+                    style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
+                    oninput="updatePaymentTotal(${saleTotal})" step="0.01" min="0">
+            </div>
+
+            <!-- Total with Tip -->
+            <div style="background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; font-size: 1.125rem;">Total a pagar:</span>
+                    <span id="total-with-tip" style="font-weight: 700; font-size: 1.5rem;">$${saleTotal.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.75rem;">Método(s) de Pago:</label>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">💵 Efectivo:</label>
+                    <input type="number" id="payment-efectivo" placeholder="0.00"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
+                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                </div>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">🏦 Transferencia:</label>
+                    <input type="number" id="payment-transferencia" placeholder="0.00"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
+                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                </div>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.25rem; color: var(--color-text-light);">💳 Otro:</label>
+                    <input type="number" id="payment-otro" placeholder="0.00"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid var(--color-bg); border-radius: 8px; font-size: 1rem;"
+                        oninput="updateRemaining(${saleTotal})" step="0.01" min="0">
+                </div>
+
+                <!-- Remaining Amount -->
+                <div id="remaining-payment" style="padding: 0.75rem; border-radius: 8px; background: var(--color-bg); text-align: center;">
+                    <span style="font-weight: 600;">Pendiente: </span>
+                    <span id="remaining-amount" style="font-weight: 700; font-size: 1.125rem; color: var(--color-danger);">$${saleTotal.toFixed(2)}</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="secondary" onclick="document.getElementById('payment-modal').remove()" style="flex: 1;">
+                    Cancelar
+                </button>
+                <button id="confirm-payment-btn" class="primary" onclick="confirmCloseSaleWithPayment('${saleId}', ${saleTotal})" style="flex: 1;" disabled>
+                    Confirmar Pago
+                </button>
+            </div>
         </div>
     `;
 
@@ -848,7 +932,112 @@ function showCloseSaleModal(saleId) {
 }
 
 /**
- * Confirm close sale
+ * Set tip percentage
+ */
+function setTipPercentage(saleTotal, percentage) {
+    const tipAmount = saleTotal * (percentage / 100);
+    document.getElementById('tip-custom').value = tipAmount.toFixed(2);
+    updatePaymentTotal(saleTotal);
+
+    // Highlight selected button
+    document.querySelectorAll('.tip-btn').forEach(btn => {
+        btn.style.background = '';
+        btn.style.color = '';
+    });
+    event.target.style.background = 'var(--color-success)';
+    event.target.style.color = 'white';
+}
+
+/**
+ * Update total with tip
+ */
+function updatePaymentTotal(saleTotal) {
+    const tipInput = document.getElementById('tip-custom');
+    const tip = parseFloat(tipInput.value) || 0;
+    const totalWithTip = saleTotal + tip;
+
+    document.getElementById('total-with-tip').textContent = `$${totalWithTip.toFixed(2)}`;
+
+    // Update remaining amount
+    updateRemaining(saleTotal);
+}
+
+/**
+ * Update remaining payment amount
+ */
+function updateRemaining(saleTotal) {
+    const tipInput = document.getElementById('tip-custom');
+    const tip = parseFloat(tipInput.value) || 0;
+    const totalToPay = saleTotal + tip;
+
+    const efectivo = parseFloat(document.getElementById('payment-efectivo').value) || 0;
+    const transferencia = parseFloat(document.getElementById('payment-transferencia').value) || 0;
+    const otro = parseFloat(document.getElementById('payment-otro').value) || 0;
+
+    const totalPaid = efectivo + transferencia + otro;
+    const remaining = totalToPay - totalPaid;
+
+    const remainingEl = document.getElementById('remaining-amount');
+    const confirmBtn = document.getElementById('confirm-payment-btn');
+
+    remainingEl.textContent = `$${Math.abs(remaining).toFixed(2)}`;
+
+    if (remaining < -0.01) {
+        // Overpayment
+        remainingEl.style.color = 'var(--color-warning)';
+        remainingEl.textContent = `+$${Math.abs(remaining).toFixed(2)} (exceso)`;
+        confirmBtn.disabled = true;
+    } else if (remaining > 0.01) {
+        // Underpayment
+        remainingEl.style.color = 'var(--color-danger)';
+        confirmBtn.disabled = true;
+    } else {
+        // Exact payment
+        remainingEl.style.color = 'var(--color-success)';
+        remainingEl.textContent = '$0.00';
+        confirmBtn.disabled = false;
+    }
+}
+
+/**
+ * Confirm close sale with payment breakdown and tip
+ */
+async function confirmCloseSaleWithPayment(saleId, saleTotal) {
+    const tip = parseFloat(document.getElementById('tip-custom').value) || 0;
+    const efectivo = parseFloat(document.getElementById('payment-efectivo').value) || 0;
+    const transferencia = parseFloat(document.getElementById('payment-transferencia').value) || 0;
+    const otro = parseFloat(document.getElementById('payment-otro').value) || 0;
+
+    const paymentBreakdown = {
+        Efectivo: efectivo,
+        Transferencia: transferencia,
+        Otro: otro
+    };
+
+    // Determine primary payment method (largest amount)
+    let primaryMethod = 'Efectivo';
+    let maxAmount = efectivo;
+    if (transferencia > maxAmount) {
+        primaryMethod = 'Transferencia';
+        maxAmount = transferencia;
+    }
+    if (otro > maxAmount) {
+        primaryMethod = 'Otro';
+    }
+
+    try {
+        await closeSaleWithPayment(saleId, primaryMethod, paymentBreakdown, tip);
+        document.getElementById('payment-modal').remove();
+        showToast(`Venta cerrada correctamente`, 'success');
+        loadActiveSales();
+    } catch (error) {
+        console.error('Error closing sale:', error);
+        showToast('Error al cerrar la venta', 'error');
+    }
+}
+
+/**
+ * Confirm close sale (legacy - kept for compatibility)
  */
 async function confirmCloseSale(saleId, paymentMethod) {
     try {
