@@ -892,9 +892,19 @@ function saveSaleOffline() {
  * Show close sale modal with tip and split payment support
  */
 function showCloseSaleModal(saleId) {
-    const sales = getActiveSales();
+    let sales = getActiveSales();
+
+    // Fallback to localStorage if API fails
+    if (!sales || sales.length === 0) {
+        sales = JSON.parse(localStorage.getItem('salesActive') || '[]');
+    }
+
     const sale = sales.find(s => s.id === saleId);
-    if (!sale) return;
+    if (!sale) {
+        console.error('Sale not found:', saleId);
+        showToast('Venta no encontrada', 'error');
+        return;
+    }
 
     const saleTotal = sale.total;
 
