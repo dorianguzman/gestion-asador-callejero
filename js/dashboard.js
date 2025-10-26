@@ -72,6 +72,11 @@ function generateReport() {
     profitEl.textContent = `$${netProfit.toFixed(2)} MXN`;
     profitEl.style.color = netProfit >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
 
+    // Update additional analytics
+    updatePaymentBreakdown(filteredSales);
+    updateAverageSales(filteredSales, month, year);
+    updateTopProducts(filteredSales);
+
     // Update charts
     updateRevenueExpensesChart(month, year);
     updateExpenseBreakdownChart(filteredExpenses);
@@ -268,4 +273,101 @@ function updateExpenseBreakdownChart(filteredExpenses) {
             }
         }
     });
+}
+
+/**
+ * Update payment method breakdown
+ */
+function updatePaymentBreakdown(sales) {
+    const cash = sales.filter(s => s.paymentMethod === 'efectivo').reduce((sum, s) => sum + s.total, 0);
+    const card = sales.filter(s => s.paymentMethod === 'tarjeta').reduce((sum, s) => sum + s.total, 0);
+
+    document.getElementById('payment-cash').textContent = `$${cash.toFixed(2)}`;
+    document.getElementById('payment-card').textContent = `$${card.toFixed(2)}`;
+}
+
+/**
+ * Update average sales metrics
+ */
+function updateAverageSales(sales, month, year) {
+    const totalSales = sales.length;
+    const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+    const avgSale = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+    // Calculate days in period
+    let daysInPeriod;
+    if (month) {
+        daysInPeriod = new Date(year, month, 0).getDate();
+    } else {
+        // Full year
+        const start = new Date(year, 0, 1);
+        const end = new Date(year, 11, 31);
+        daysInPeriod = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    }
+
+    const avgDaily = daysInPeriod > 0 ? totalRevenue / daysInPeriod : 0;
+
+    document.getElementById('kpi-avg-sale').textContent = `$${avgSale.toFixed(2)} MXN`;
+    document.getElementById('total-sales-count').textContent = totalSales;
+    document.getElementById('kpi-avg-daily').textContent = `$${avgDaily.toFixed(2)} MXN`;
+    document.getElementById('days-in-period').textContent = daysInPeriod;
+}
+
+/**
+ * Update top products
+ */
+function updateTopProducts(sales) {
+    // Count products across all sales
+    const productCount = {};
+    const productRevenue = {};
+
+    sales.forEach(sale => {
+        if (sale.items && Array.isArray(sale.items)) {
+            sale.items.forEach(item => {
+                const name = item.name;
+                productCount[name] = (productCount[name] || 0) + item.quantity;
+                productRevenue[name] = (productRevenue[name] || 0) + item.subtotal;
+            });
+        }
+    });
+
+    // Convert to array and sort by quantity
+    const products = Object.keys(productCount).map(name => ({
+        name,
+        quantity: productCount[name],
+        revenue: productRevenue[name]
+    })).sort((a, b) => b.quantity - a.quantity);
+
+    // Display top 10
+    const container = document.getElementById('top-products');
+    if (products.length === 0) {
+        container.innerHTML = '<p style="color: var(--color-text-light); text-align: center;">No hay datos para mostrar</p>';
+        return;
+    }
+
+    const top10 = products.slice(0, 10);
+    const medals = ['🥇', '🥈', '🥉'];
+
+    container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--color-bg); text-align: left;">
+                    <th style="padding: 0.5rem;">#</th>
+                    <th style="padding: 0.5rem;">Producto</th>
+                    <th style="padding: 0.5rem; text-align: right;">Cantidad</th>
+                    <th style="padding: 0.5rem; text-align: right;">Ingresos</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${top10.map((product, index) => `
+                    <tr style="border-bottom: 1px solid var(--color-bg);">
+                        <td style="padding: 0.5rem; font-size: 1.25rem;">${medals[index] || (index + 1)}</td>
+                        <td style="padding: 0.5rem; font-weight: 500;">${product.name}</td>
+                        <td style="padding: 0.5rem; text-align: right;">${product.quantity}</td>
+                        <td style="padding: 0.5rem; text-align: right; font-weight: 600; color: var(--color-success);">$${product.revenue.toFixed(2)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
