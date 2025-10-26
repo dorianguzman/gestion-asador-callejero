@@ -54,13 +54,15 @@ function exportToCsv(sales, expenses, filename) {
     csv += `Ganancia Neta,$${netProfit.toFixed(2)}\n\n`;
 
     // Payment method breakdown
-    const cash = sales.filter(s => s.paymentMethod === 'efectivo').reduce((sum, s) => sum + s.total, 0);
-    const card = sales.filter(s => s.paymentMethod === 'tarjeta').reduce((sum, s) => sum + s.total, 0);
+    const cash = sales.filter(s => s.paymentMethod === 'Efectivo').reduce((sum, s) => sum + s.total, 0);
+    const transfer = sales.filter(s => s.paymentMethod === 'Transferencia').reduce((sum, s) => sum + s.total, 0);
+    const other = sales.filter(s => s.paymentMethod === 'Otro').reduce((sum, s) => sum + s.total, 0);
 
     csv += '=== VENTAS POR MÉTODO DE PAGO ===\n';
     csv += 'Método,Monto\n';
     csv += `Efectivo,$${cash.toFixed(2)}\n`;
-    csv += `Tarjeta,$${card.toFixed(2)}\n\n`;
+    csv += `Transferencia,$${transfer.toFixed(2)}\n`;
+    csv += `Otro,$${other.toFixed(2)}\n\n`;
 
     // Detailed sales
     csv += '=== DETALLE DE VENTAS ===\n';
@@ -70,7 +72,7 @@ function exportToCsv(sales, expenses, filename) {
         const dateStr = date.toLocaleDateString('es-MX');
         const timeStr = date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         const itemsStr = sale.items ? sale.items.map(i => `${i.name} x${i.quantity}`).join('; ') : 'N/A';
-        const paymentMethod = sale.paymentMethod === 'efectivo' ? 'Efectivo' : 'Tarjeta';
+        const paymentMethod = sale.paymentMethod || 'N/A';
 
         csv += `${dateStr},${timeStr},${paymentMethod},"${itemsStr}",$${sale.total.toFixed(2)}\n`;
     });

@@ -306,6 +306,7 @@
                         </select>
                     </label>
                     <button class="primary" onclick="generateReport()">Generar Reporte</button>
+                    <button class="secondary" onclick="exportData()" style="margin-left: 0.5rem;">📊 Exportar CSV</button>
                 </div>
             </div>
 
@@ -334,9 +335,13 @@
                             <span>💵 Efectivo:</span>
                             <strong id="payment-cash">$0.00</strong>
                         </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span>🏦 Transferencia:</span>
+                            <strong id="payment-transfer">$0.00</strong>
+                        </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span>💳 Tarjeta:</span>
-                            <strong id="payment-card">$0.00</strong>
+                            <span>💳 Otro:</span>
+                            <strong id="payment-other">$0.00</strong>
                         </div>
                     </div>
                 </div>
@@ -358,12 +363,7 @@
 
             <!-- Top Products -->
             <div class="card" style="margin-top: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h3>Productos Más Vendidos</h3>
-                    <button class="secondary" onclick="exportData()" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                        📊 Exportar CSV
-                    </button>
-                </div>
+                <h3 style="margin-bottom: 1rem;">Productos Más Vendidos</h3>
                 <div id="top-products">
                     <p style="color: var(--color-text-light); text-align: center;">No hay datos para mostrar</p>
                 </div>

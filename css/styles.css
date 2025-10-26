@@ -1086,6 +1086,35 @@ button {
     .form-actions button {
         width: 100%;
     }
+
+    /* Top products table responsiveness */
+    #top-products table {
+        font-size: 0.875rem;
+    }
+
+    #top-products th,
+    #top-products td {
+        padding: 0.375rem !important;
+    }
+
+    #top-products th:first-child,
+    #top-products td:first-child {
+        font-size: 1rem;
+    }
+
+    /* Charts on mobile */
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* KPI cards on mobile */
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-value {
+        font-size: 1.75rem;
+    }
 }
 
 /* ===== TOUCH OPTIMIZATIONS ===== */

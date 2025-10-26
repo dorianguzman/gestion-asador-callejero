@@ -279,11 +279,13 @@ function updateExpenseBreakdownChart(filteredExpenses) {
  * Update payment method breakdown
  */
 function updatePaymentBreakdown(sales) {
-    const cash = sales.filter(s => s.paymentMethod === 'efectivo').reduce((sum, s) => sum + s.total, 0);
-    const card = sales.filter(s => s.paymentMethod === 'tarjeta').reduce((sum, s) => sum + s.total, 0);
+    const cash = sales.filter(s => s.paymentMethod === 'Efectivo').reduce((sum, s) => sum + s.total, 0);
+    const transfer = sales.filter(s => s.paymentMethod === 'Transferencia').reduce((sum, s) => sum + s.total, 0);
+    const other = sales.filter(s => s.paymentMethod === 'Otro').reduce((sum, s) => sum + s.total, 0);
 
     document.getElementById('payment-cash').textContent = `$${cash.toFixed(2)}`;
-    document.getElementById('payment-card').textContent = `$${card.toFixed(2)}`;
+    document.getElementById('payment-transfer').textContent = `$${transfer.toFixed(2)}`;
+    document.getElementById('payment-other').textContent = `$${other.toFixed(2)}`;
 }
 
 /**
