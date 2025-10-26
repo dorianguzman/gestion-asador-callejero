@@ -166,7 +166,7 @@
             <!-- New Sale Tab -->
             <div id="nueva-venta" class="tab-content">
                 <div class="card">
-                    <h3>Nueva Venta</h3>
+                    <h3>Seleccionar Productos</h3>
                     <div id="sale-form">
                         <!-- Will be populated dynamically -->
                     </div>
@@ -252,40 +252,15 @@
                         <label>Monto (MXN):</label>
                         <input type="number" id="expense-amount" step="0.01" min="0.01" required title="Por favor ingresa el monto" style="display: none;">
 
-                        <!-- Quick Amount Buttons -->
-                        <div class="amount-quick-grid">
-                            <button type="button" class="amount-quick-btn" onclick="addQuickAmount(50)">+$50</button>
-                            <button type="button" class="amount-quick-btn" onclick="addQuickAmount(100)">+$100</button>
-                            <button type="button" class="amount-quick-btn" onclick="addQuickAmount(200)">+$200</button>
-                            <button type="button" class="amount-quick-btn" onclick="addQuickAmount(500)">+$500</button>
-                        </div>
-
-                        <!-- Amount Display and Input -->
-                        <div class="amount-display-container">
-                            <div class="amount-display">
-                                <span style="font-size: 1rem; color: var(--color-text-light);">$</span>
-                                <input type="text" id="amount-display-input" inputmode="decimal" placeholder="0.00"
-                                    style="border: none; background: transparent; font-size: 2rem; font-weight: bold; color: var(--color-danger); width: 100%; text-align: center; outline: none;"
-                                    oninput="updateAmountFromDisplay(this.value)">
-                                <span style="font-size: 1rem; color: var(--color-text-light);">MXN</span>
+                        <!-- Amount Display and Button -->
+                        <div style="display: flex; gap: 0.75rem; align-items: stretch;">
+                            <div id="expense-amount-display" style="flex: 1; background: var(--color-bg); padding: 1.25rem; border-radius: var(--radius-md); text-align: center; border: 2px solid var(--color-primary);">
+                                <div style="font-size: 0.75rem; color: var(--color-text-light); margin-bottom: 0.25rem;">Monto</div>
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">$<span id="expense-amount-value">0.00</span></div>
                             </div>
-                            <button type="button" class="amount-clear-btn" onclick="clearAmount()">Limpiar</button>
-                        </div>
-
-                        <!-- Mobile Keypad -->
-                        <div class="number-keypad">
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('1')">1</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('2')">2</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('3')">3</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('4')">4</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('5')">5</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('6')">6</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('7')">7</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('8')">8</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('9')">9</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('.')">.</button>
-                            <button type="button" class="keypad-btn" onclick="addDigitToAmount('0')">0</button>
-                            <button type="button" class="keypad-btn keypad-backspace" onclick="backspaceAmount()">⌫</button>
+                            <button type="button" onclick="showExpenseAmountModal()" style="background: var(--color-primary); color: white; border: none; padding: 1rem 1.5rem; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; min-width: 120px; font-size: 1rem;">
+                                Ingresar Monto
+                            </button>
                         </div>
                     </div>
 

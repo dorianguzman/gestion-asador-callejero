@@ -229,9 +229,9 @@
         {
           "id": "delivery-service",
           "name": "Servicio a Domicilio",
-          "price": 50,
+          "price": 0,
           "available": true,
-          "editable": true,
+          "requiresCustomAmount": true,
           "note": "Precio variable según distancia"
         }
       ]

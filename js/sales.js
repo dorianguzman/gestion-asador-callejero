@@ -281,46 +281,67 @@ function addItemToSale(itemId, categoryId) {
  */
 function showCustomAmountModal(item) {
     const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;';
-
+    modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div style="background: white; padding: 2rem; border-radius: var(--radius-lg); max-width: 400px; width: 100%;">
-            <h3 style="margin-bottom: 1rem; color: var(--color-primary);">${item.name}</h3>
-            <p style="margin-bottom: 1.5rem; color: var(--color-text-light); font-size: 0.875rem;">
-                ${item.note || 'Ingresa el monto del servicio'}
-            </p>
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="modal-icon">💵</div>
+                <h3 class="modal-title">${item.name}</h3>
+                <p class="modal-message">${item.note || 'Ingresa el monto del servicio'}</p>
 
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Monto (MXN):</label>
-                <input type="number" id="custom-amount-input"
-                    style="width: 100%; padding: 0.75rem; font-size: 1.25rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md);"
-                    placeholder="0.00" step="10" min="0" autofocus>
-            </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; text-align: left;">Monto (MXN):</label>
+                    <input type="number" id="custom-amount-input"
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        placeholder="0.00" step="10" min="0" autofocus>
+                </div>
 
-            <div style="display: flex; gap: 0.5rem;">
-                <button onclick="confirmCustomAmount('${item.id}', '${item.name}')"
-                    style="flex: 1; padding: 0.75rem; background: var(--color-primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">
-                    Agregar
-                </button>
-                <button onclick="this.closest('[style*=fixed]').remove()"
-                    style="flex: 1; padding: 0.75rem; background: #E0E0E0; color: var(--color-text); border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;">
-                    Cancelar
-                </button>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="custom-amount-cancel">
+                        Cancelar
+                    </button>
+                    <button class="modal-btn modal-btn-confirm" id="custom-amount-confirm">
+                        Agregar
+                    </button>
+                </div>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
 
+    // Trigger animation
+    setTimeout(() => modal.classList.add('active'), 10);
+
+    const input = document.getElementById('custom-amount-input');
+    const confirmBtn = document.getElementById('custom-amount-confirm');
+    const cancelBtn = document.getElementById('custom-amount-cancel');
+
+    const handleConfirm = () => {
+        confirmCustomAmount(item.id, item.name);
+    };
+
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) handleCancel();
+    });
+
     // Focus on input
     setTimeout(() => {
-        const input = document.getElementById('custom-amount-input');
         input.focus();
 
         // Allow Enter key to confirm
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                confirmCustomAmount(item.id, item.name);
+                handleConfirm();
             }
         });
     }, 100);
@@ -329,12 +350,19 @@ function showCustomAmountModal(item) {
 /**
  * Confirm custom amount and add to sale
  */
-function confirmCustomAmount(itemId, itemName) {
+async function confirmCustomAmount(itemId, itemName) {
     const input = document.getElementById('custom-amount-input');
     const amount = parseFloat(input.value);
 
     if (!amount || amount <= 0) {
-        alert('Por favor ingresa un monto válido');
+        await showAlert(
+            'Por favor ingresa un monto mayor a cero.',
+            'Monto Inválido',
+            {
+                icon: '⚠️',
+                buttonColor: 'var(--color-warning)'
+            }
+        );
         input.focus();
         return;
     }
@@ -348,8 +376,16 @@ function confirmCustomAmount(itemId, itemName) {
         subtotal: amount
     });
 
-    // Remove modal
-    document.querySelector('[style*="position: fixed"]').remove();
+    // Remove modal with animation
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            if (modal.parentNode) {
+                document.body.removeChild(modal);
+            }
+        }, 300);
+    }
 
     // Update summary
     updateSaleSummary();
@@ -489,9 +525,19 @@ function removeItemFromSale(index) {
 /**
  * Clear current sale
  */
-function clearCurrentSale() {
+async function clearCurrentSale() {
     if (currentSale.items.length > 0) {
-        if (!confirm('¿Estás seguro de que quieres limpiar la venta actual?')) {
+        const confirmed = await showConfirm(
+            '¿Estás seguro de que quieres limpiar la venta actual?',
+            'Limpiar Venta',
+            {
+                confirmText: 'Sí, limpiar',
+                cancelText: 'Cancelar',
+                icon: '🗑️'
+            }
+        );
+
+        if (!confirmed) {
             return;
         }
     }
@@ -586,7 +632,18 @@ async function confirmCloseSale(saleId, paymentMethod) {
  * Delete active sale with confirmation
  */
 async function deleteActiveSaleConfirm(saleId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
+    const confirmed = await showConfirm(
+        'Esta acción no se puede deshacer.',
+        'Eliminar Venta',
+        {
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            confirmColor: 'var(--color-danger)',
+            icon: '⚠️'
+        }
+    );
+
+    if (!confirmed) {
         return;
     }
 

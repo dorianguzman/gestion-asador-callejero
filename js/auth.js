@@ -32,8 +32,18 @@ function hideLoginScreen() {
 /**
  * Logout function (placeholder - redirects to home)
  */
-function logout() {
-    if (confirm('¿Estás seguro de que quieres salir?')) {
+async function logout() {
+    const confirmed = await showConfirm(
+        'Todos los cambios no guardados se perderán.',
+        'Cerrar Sesión',
+        {
+            confirmText: 'Sí, salir',
+            cancelText: 'Cancelar',
+            icon: '👋'
+        }
+    );
+
+    if (confirmed) {
         window.location.reload();
     }
 }

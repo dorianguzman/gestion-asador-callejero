@@ -216,71 +216,97 @@ function selectExpenseDate(option) {
 }
 
 /**
- * Add quick amount
+ * Show expense amount modal
  */
-function addQuickAmount(amount) {
-    const currentAmount = parseFloat(document.getElementById('amount-display-input').value) || 0;
-    const newAmount = currentAmount + amount;
-    document.getElementById('amount-display-input').value = newAmount.toFixed(2);
-    document.getElementById('expense-amount').value = newAmount.toFixed(2);
-}
+function showExpenseAmountModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container">
+            <div class="modal-content">
+                <div class="modal-icon">💵</div>
+                <h3 class="modal-title">Ingresar Monto del Gasto</h3>
+                <p class="modal-message">Ingresa la cantidad del gasto en pesos mexicanos.</p>
 
-/**
- * Update amount from display input
- */
-function updateAmountFromDisplay(value) {
-    // Remove non-numeric characters except decimal point
-    const cleanValue = value.replace(/[^\d.]/g, '');
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; text-align: left;">Monto (MXN):</label>
+                    <input type="number" id="expense-amount-modal-input"
+                        style="width: 100%; padding: 0.875rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--color-primary); border-radius: var(--radius-md); font-weight: 600;"
+                        placeholder="0.00" step="10" min="0.01" autofocus>
+                </div>
 
-    // Ensure only one decimal point
-    const parts = cleanValue.split('.');
-    const formatted = parts.length > 2
-        ? parts[0] + '.' + parts.slice(1).join('')
-        : cleanValue;
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="expense-amount-modal-cancel">
+                        Cancelar
+                    </button>
+                    <button class="modal-btn modal-btn-confirm" id="expense-amount-modal-confirm">
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 
-    document.getElementById('expense-amount').value = formatted;
-}
+    document.body.appendChild(modal);
 
-/**
- * Clear amount
- */
-function clearAmount() {
-    document.getElementById('amount-display-input').value = '';
-    document.getElementById('expense-amount').value = '';
-}
+    // Trigger animation
+    setTimeout(() => modal.classList.add('active'), 10);
 
-/**
- * Add digit to amount using keypad
- */
-function addDigitToAmount(digit) {
-    const input = document.getElementById('amount-display-input');
-    const currentValue = input.value || '';
+    const input = document.getElementById('expense-amount-modal-input');
+    const confirmBtn = document.getElementById('expense-amount-modal-confirm');
+    const cancelBtn = document.getElementById('expense-amount-modal-cancel');
 
-    // Prevent multiple decimal points
-    if (digit === '.' && currentValue.includes('.')) {
-        return;
-    }
+    const handleConfirm = async () => {
+        const amount = parseFloat(input.value);
 
-    // Limit to 2 decimal places
-    const parts = currentValue.split('.');
-    if (parts.length === 2 && parts[1].length >= 2) {
-        return;
-    }
+        if (!amount || amount <= 0) {
+            await showAlert(
+                'Por favor ingresa un monto mayor a cero.',
+                'Monto Inválido',
+                {
+                    icon: '⚠️',
+                    buttonColor: 'var(--color-warning)'
+                }
+            );
+            input.focus();
+            return;
+        }
 
-    const newValue = currentValue + digit;
-    input.value = newValue;
-    document.getElementById('expense-amount').value = newValue;
-}
+        // Update the expense amount
+        document.getElementById('expense-amount').value = amount.toFixed(2);
+        document.getElementById('expense-amount-value').textContent = amount.toFixed(2);
 
-/**
- * Backspace amount
- */
-function backspaceAmount() {
-    const input = document.getElementById('amount-display-input');
-    const currentValue = input.value || '';
-    const newValue = currentValue.slice(0, -1);
-    input.value = newValue;
-    document.getElementById('expense-amount').value = newValue;
+        // Close modal
+        modal.classList.remove('active');
+        setTimeout(() => {
+            if (modal.parentNode) {
+                document.body.removeChild(modal);
+            }
+        }, 300);
+    };
+
+    const handleCancel = () => {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) handleCancel();
+    });
+
+    // Focus on input and handle Enter key
+    setTimeout(() => {
+        input.focus();
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleConfirm();
+            }
+        });
+    }, 100);
 }
 
 /**
@@ -458,7 +484,8 @@ function clearExpenseForm() {
     document.getElementById('selected-date-display').style.display = 'none';
 
     // Reset amount
-    clearAmount();
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-amount-value').textContent = '0.00';
 }
 
 /**
@@ -483,8 +510,8 @@ function editExpense(expenseId) {
     setTimeout(() => {
         document.getElementById('expense-date').value = expense.date;
         document.getElementById('expense-description').value = expense.description;
-        document.getElementById('amount-display-input').value = expense.amount.toFixed(2);
         document.getElementById('expense-amount').value = expense.amount.toFixed(2);
+        document.getElementById('expense-amount-value').textContent = expense.amount.toFixed(2);
 
         // Update date display
         const selectedDate = new Date(expense.date + 'T00:00:00');
@@ -504,7 +531,18 @@ function editExpense(expenseId) {
  * Delete expense with confirmation
  */
 async function deleteExpenseConfirm(expenseId) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+    const confirmed = await showConfirm(
+        'Esta acción no se puede deshacer.',
+        'Eliminar Gasto',
+        {
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            confirmColor: 'var(--color-danger)',
+            icon: '⚠️'
+        }
+    );
+
+    if (!confirmed) {
         return;
     }
 
@@ -577,6 +615,43 @@ async function forceSyncGitHub() {
 }
 
 /**
+ * Update online status indicator
+ */
+function updateOnlineStatus() {
+    const statusEl = document.getElementById('online-status');
+    if (!statusEl) return;
+
+    if (navigator.onLine) {
+        statusEl.classList.add('online');
+        statusEl.classList.remove('offline');
+        statusEl.querySelector('.status-text').textContent = 'En línea';
+    } else {
+        statusEl.classList.add('offline');
+        statusEl.classList.remove('online');
+        statusEl.querySelector('.status-text').textContent = 'Sin conexión';
+    }
+}
+
+/**
+ * Update sync status indicator
+ */
+function updateSyncStatus(status = 'idle') {
+    const syncEl = document.getElementById('sync-status');
+    const textEl = document.getElementById('last-sync-text');
+
+    if (!syncEl || !textEl) return;
+
+    if (status === 'syncing') {
+        syncEl.classList.add('syncing');
+        textEl.textContent = 'Sincronizando...';
+    } else {
+        syncEl.classList.remove('syncing');
+        const now = new Date();
+        textEl.textContent = `Actualizado ${now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+}
+
+/**
  * Show toast notification
  */
 function showToast(message, type = 'info') {
@@ -596,6 +671,144 @@ function showToast(message, type = 'info') {
             container.removeChild(toast);
         }, 300);
     }, 3000);
+}
+
+/**
+ * Show custom confirmation modal
+ * @param {string} message - The message to display
+ * @param {string} title - The modal title
+ * @param {object} options - Optional configuration
+ * @returns {Promise<boolean>} - Resolves to true if confirmed, false if cancelled
+ */
+function showConfirm(message, title = 'Confirmar', options = {}) {
+    return new Promise((resolve) => {
+        const {
+            confirmText = 'Confirmar',
+            cancelText = 'Cancelar',
+            confirmColor = 'var(--color-primary)',
+            icon = '⚠️'
+        } = options;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-content">
+                    <div class="modal-icon">${icon}</div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn modal-btn-cancel" id="modal-cancel">
+                            ${cancelText}
+                        </button>
+                        <button class="modal-btn modal-btn-confirm" id="modal-confirm" style="background: ${confirmColor};">
+                            ${confirmText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Trigger animation
+        setTimeout(() => modal.classList.add('active'), 10);
+
+        const handleConfirm = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.removeChild(modal);
+                resolve(true);
+            }, 300);
+        };
+
+        const handleCancel = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.removeChild(modal);
+                resolve(false);
+            }, 300);
+        };
+
+        document.getElementById('modal-confirm').addEventListener('click', handleConfirm);
+        document.getElementById('modal-cancel').addEventListener('click', handleCancel);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) handleCancel();
+        });
+
+        // Handle Enter key
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter') {
+                handleConfirm();
+                document.removeEventListener('keypress', handleKeyPress);
+            } else if (e.key === 'Escape') {
+                handleCancel();
+                document.removeEventListener('keypress', handleKeyPress);
+            }
+        };
+        document.addEventListener('keypress', handleKeyPress);
+    });
+}
+
+/**
+ * Show alert modal
+ * @param {string} message - The message to display
+ * @param {string} title - The modal title
+ * @param {object} options - Optional configuration
+ * @returns {Promise<void>}
+ */
+function showAlert(message, title = 'Aviso', options = {}) {
+    return new Promise((resolve) => {
+        const {
+            buttonText = 'Entendido',
+            buttonColor = 'var(--color-primary)',
+            icon = 'ℹ️'
+        } = options;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-content">
+                    <div class="modal-icon">${icon}</div>
+                    <h3 class="modal-title">${title}</h3>
+                    <p class="modal-message">${message}</p>
+                    <div class="modal-actions">
+                        <button class="modal-btn modal-btn-confirm" id="modal-ok" style="background: ${buttonColor};">
+                            ${buttonText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Trigger animation
+        setTimeout(() => modal.classList.add('active'), 10);
+
+        const handleOk = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.removeChild(modal);
+                resolve();
+            }, 300);
+        };
+
+        document.getElementById('modal-ok').addEventListener('click', handleOk);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) handleOk();
+        });
+
+        // Handle Enter key
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter' || e.key === 'Escape') {
+                handleOk();
+                document.removeEventListener('keypress', handleKeyPress);
+            }
+        };
+        document.addEventListener('keypress', handleKeyPress);
+    });
 }
 
 // Note: initializeApp() is called from auth.js after successful authentication
