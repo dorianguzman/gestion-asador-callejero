@@ -1542,39 +1542,22 @@ async function editClosedSale(saleId) {
         return;
     }
 
-    let closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
-    const saleIndex = closedSales.findIndex(s => s.id === saleId);
+    try {
+        // Use API to reopen the sale
+        await reopenClosedSale(saleId);
 
-    if (saleIndex === -1) {
-        showToast('Venta no encontrada', 'error');
-        return;
+        // Reload views
+        loadActiveSales();
+        loadClosedSales();
+
+        // Switch to active sales tab
+        document.querySelector('.tab-btn[data-tab="ventas-activas"]').click();
+
+        showToast('Venta reabierta para edición', 'success');
+    } catch (error) {
+        console.error('Error reopening sale:', error);
+        // Error toast is shown by the API function
     }
-
-    // Get the sale and remove payment info
-    const sale = closedSales[saleIndex];
-    sale.status = 'active';
-    delete sale.paymentMethod;
-    delete sale.paymentBreakdown;
-    delete sale.tip;
-    delete sale.closedAt;
-
-    // Move to active sales
-    const activeSales = JSON.parse(localStorage.getItem('salesActive') || '[]');
-    activeSales.push(sale);
-    closedSales.splice(saleIndex, 1);
-
-    // Update localStorage
-    localStorage.setItem('salesActive', JSON.stringify(activeSales));
-    localStorage.setItem('salesClosed', JSON.stringify(closedSales));
-
-    // Reload views
-    loadActiveSales();
-    loadClosedSales();
-
-    // Switch to active sales tab
-    document.querySelector('.tab-btn[data-tab="ventas-activas"]').click();
-
-    showToast('Venta reabierta para edición', 'success');
 }
 
 /**
@@ -1596,18 +1579,14 @@ async function deleteClosedSaleConfirm(saleId) {
         return;
     }
 
-    // Delete from localStorage
-    let closedSales = JSON.parse(localStorage.getItem('salesClosed') || '[]');
-    const saleIndex = closedSales.findIndex(s => s.id === saleId);
+    try {
+        // Use API to delete the sale
+        await deleteClosedSale(saleId);
 
-    if (saleIndex === -1) {
-        showToast('Venta no encontrada', 'error');
-        return;
+        loadClosedSales();
+        showToast('Venta eliminada correctamente', 'success');
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+        // Error toast is shown by the API function
     }
-
-    closedSales.splice(saleIndex, 1);
-    localStorage.setItem('salesClosed', JSON.stringify(closedSales));
-
-    loadClosedSales();
-    showToast('Venta eliminada correctamente', 'success');
 }

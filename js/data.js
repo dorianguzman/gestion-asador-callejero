@@ -421,3 +421,73 @@ async function updateMenu(menu) {
         throw error;
     }
 }
+
+/**
+ * Delete closed sale
+ */
+async function deleteClosedSale(saleId) {
+    try {
+        updateSyncStatus('syncing');
+
+        const response = await fetch(`/api/sales-closed?id=${saleId}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete closed sale');
+        }
+
+        // Update cache
+        const saleIndex = dataCache.salesClosed.findIndex(s => s.id === saleId);
+        if (saleIndex !== -1) {
+            dataCache.salesClosed.splice(saleIndex, 1);
+        }
+
+        updateSyncStatus('idle');
+    } catch (error) {
+        console.error('Error deleting closed sale:', error);
+        updateSyncStatus('idle');
+        if (typeof showToast === 'function') {
+            showToast('Error al eliminar venta - Verifica conexión', 'error');
+        }
+        throw error;
+    }
+}
+
+/**
+ * Reopen closed sale (move back to active)
+ */
+async function reopenClosedSale(saleId) {
+    try {
+        updateSyncStatus('syncing');
+
+        const response = await fetch(`/api/sales-active/reopen`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ saleId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to reopen sale');
+        }
+
+        const reopenedSale = await response.json();
+
+        // Update cache - remove from closed, add to active
+        const saleIndex = dataCache.salesClosed.findIndex(s => s.id === saleId);
+        if (saleIndex !== -1) {
+            dataCache.salesClosed.splice(saleIndex, 1);
+        }
+        dataCache.salesActive.push(reopenedSale);
+
+        updateSyncStatus('idle');
+        return reopenedSale;
+    } catch (error) {
+        console.error('Error reopening sale:', error);
+        updateSyncStatus('idle');
+        if (typeof showToast === 'function') {
+            showToast('Error al reabrir venta - Verifica conexión', 'error');
+        }
+        throw error;
+    }
+}
